@@ -107,6 +107,7 @@ public class PadInput
         public Vector2       Position;
         public Vector2       Move;
         public Vector2       TouchMove;
+        public float         MouseWheel;
         public bool          IsMoved;
 
         float                touchMoveTime;
@@ -161,6 +162,17 @@ public class PadInput
                     }
                 }
                 Position = v;
+            }
+            else
+            if (MouseWheel != 0)
+            {
+                if (IsMoved == false)
+                {
+                    IsMoved = true;
+                    TouchMove.y      = MouseWheel / 6;
+                    touchMoveStart.y = MouseWheel / 6;
+                    touchMoveTime    = Time.time;
+                }
             }
             else
             {
@@ -224,7 +236,6 @@ public class PadInput
         public PadVector       AxisR   = new PadVector();
         public PadVector       Trigger = new PadVector();
         public PadVector       Mouse   = new PadVector();
-        public float           MouseWheel;
         public List<PadVector> TouchPos = new List<PadVector>();
 
 #if UNITY_STANDALONE || UNITY_EDITOR
@@ -562,7 +573,7 @@ public class PadInput
     /// </summary>
     public float GetMouseWheel()
     {
-        return pad.MouseWheel;
+        return pad.Mouse.MouseWheel;
     }
 
     /// <summary>
@@ -855,6 +866,14 @@ public class PadInput
             }
         }
 
+        float   wheel = Mouse.current.scroll.ReadValue().y;
+
+        if (wheel != pad.Mouse.MouseWheel)
+        {
+            pad.Button |= B_AnyKey;
+        }
+        pad.Mouse.MouseWheel = wheel;
+
         pad.Mouse.Update(_mouse, (pad.Button & B_MouseLeft) != 0);
 
         // クリックは、押して、移動なしに離したら発生する
@@ -866,14 +885,6 @@ public class PadInput
         {
             pad.Button |= B_Click;
         }
-
-        float   wheel = Mouse.current.scroll.ReadValue().y;
-
-        if (wheel != pad.MouseWheel)
-        {
-            pad.Button |= B_AnyKey;
-        }
-        pad.MouseWheel = wheel;
     }
 #endif
 
