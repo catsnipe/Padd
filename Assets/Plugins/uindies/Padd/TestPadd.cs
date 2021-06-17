@@ -78,7 +78,8 @@ public class TestPadd : MonoBehaviour
         {
             if (vecs[i].Position.x != 0 || vecs[i].Position.y != 0)
             {
-                sbutton += $"{names[i]}: {vecs[i].IsMoved} {vecs[i].Position.x} {vecs[i].Position.y} {vecs[i].TouchMove.x} {vecs[i].TouchMove.y}\r\n";
+                sbutton += $"{names[i]}: {vecs[i].IsMoved} {vecs[i].Position.x} {vecs[i].Position.y}\r\n";
+                sbutton += $"{names[i]} swipe: {vecs[i].TouchMove.x} {vecs[i].TouchMove.y}\r\n";
             }
         }
 
