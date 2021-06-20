@@ -1,5 +1,5 @@
 # Padd
-A simple wrapper class for the Input System
+A simple wrapper class for Input System(unity)
 
 # requirement
 unity2019 or later  
