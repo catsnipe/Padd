@@ -291,16 +291,8 @@ public class PadInput
     /// キーコンフィグ用データ
     /// </summary>
     [Serializable]
-    public class PadConfig
+    public class KeyConfig
     {
-        /// <summary>
-        /// １つ目のディレイタイム（秒）
-        /// </summary>
-        public float    FirstDelay;
-        /// <summary>
-        /// ２つ目以降のディレイタイム（秒）
-        /// </summary>
-        public float    SecondDelay;
         /// <summary>
         /// キーバインド変更（１つのボタンに複数のキー可能）
         /// </summary>
@@ -321,19 +313,12 @@ public class PadInput
         public Key[]	Select;
         public Key[]	Start;
         public Key[]	Touch1;
-        /// <summary>
-        /// パッド入力入れ替え用
-        /// </summary>
-        public ePad[]   Pad;
 
         /// <summary>
         /// .ctor
         /// </summary>
-        public PadConfig()
+        public KeyConfig()
         {
-            FirstDelay  = 0.25f;
-            SecondDelay = 0.04f;
-
             VecU   = new Key[] { Key.UpArrow, Key.W };
             VecD   = new Key[] { Key.DownArrow, Key.S };
             VecL   = new Key[] { Key.LeftArrow, Key.A };
@@ -351,6 +336,45 @@ public class PadInput
             Select = new Key[] { Key.Digit1 };
             Start  = new Key[] { Key.Digit2 };
             Touch1 = new Key[] { Key.Digit3 };
+        }
+    }
+
+    /// <summary>
+    /// パッドコンフィグ用データ
+    /// </summary>
+    [Serializable]
+    public class PadConfig
+    {
+        /// <summary>
+        /// １つ目のディレイタイム（秒）
+        /// </summary>
+        public float    FirstDelay;
+        /// <summary>
+        /// ２つ目以降のディレイタイム（秒）
+        /// </summary>
+        public float    SecondDelay;
+        /// <summary>
+        /// MenuUp, MenuDown, MenuLeft, MenuRight を左スティックでも許可する
+        /// </summary>
+        public bool     LeftStickMenu;
+        /// <summary>
+        /// MenuUp, MenuDown, MenuLeft, MenuRight を右スティックでも許可する
+        /// </summary>
+        public bool     RightStickMenu;
+        /// <summary>
+        /// パッド入力入れ替え用
+        /// </summary>
+        public ePad[]   Pad;
+
+        /// <summary>
+        /// .ctor
+        /// </summary>
+        public PadConfig()
+        {
+            FirstDelay     = 0.25f;
+            SecondDelay    = 0.04f;
+            LeftStickMenu  = true;
+            RightStickMenu = true;
 
             Pad    = new ePad[(int)ePad.PadMax];
             for (int i = 0; i < Pad.Length; i++)
@@ -363,6 +387,7 @@ public class PadInput
 
     PadInfo          pad;
     PadConfig        padConfig;
+    KeyConfig        keyConfig;
     PadWork[]        padWorks;
     RepeatCounter[]  repCounts;
     bool             isEnabled;
@@ -387,6 +412,7 @@ public class PadInput
     {
         pad       = new PadInfo();
         padConfig = new PadConfig();
+        keyConfig = new KeyConfig();
         padWorks  = new PadWork[(int)ePad.PadMax];
         repCounts = new RepeatCounter[(int)ePad.PadMax];
         for (int i = 0; i < repCounts.Length; i++)
@@ -394,7 +420,7 @@ public class PadInput
             repCounts[i] = new RepeatCounter();
         }
 
-        setKeyConfig(padConfig);
+        setKeyConfig(keyConfig);
 
         isEnabled = true;
     }
@@ -480,18 +506,17 @@ public class PadInput
     }
 
     /// <summary>
-    /// キーコンフィグ設定
+    /// パッドコンフィグ設定
     /// </summary>
-    public void SetConfig(PadConfig config)
+    public void SetPadConfig(PadConfig config)
     {
         padConfig = config;
-        setKeyConfig(padConfig);
     }
 
     /// <summary>
-    /// 現在のキーコンフィグを取得
+    /// 現在のパッドコンフィグを取得
     /// </summary>
-    public PadConfig GetConfig()
+    public PadConfig GetPadConfig()
     {
         using (var memoryStream = new System.IO.MemoryStream())
         {
@@ -499,6 +524,29 @@ public class PadInput
             binaryFormatter.Serialize(memoryStream, padConfig);
             memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
             return (PadConfig)binaryFormatter.Deserialize(memoryStream);
+        }
+    }
+
+    /// <summary>
+    /// キーコンフィグ設定
+    /// </summary>
+    public void SetKeyConfig(KeyConfig config)
+    {
+        keyConfig = config;
+        setKeyConfig(keyConfig);
+    }
+
+    /// <summary>
+    /// 現在のキーコンフィグを取得
+    /// </summary>
+    public KeyConfig GetKeyConfig()
+    {
+        using (var memoryStream = new System.IO.MemoryStream())
+        {
+            var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+            binaryFormatter.Serialize(memoryStream, keyConfig);
+            memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
+            return (KeyConfig)binaryFormatter.Deserialize(memoryStream);
         }
     }
 
@@ -915,21 +963,61 @@ public class PadInput
         }
 #endif
 
-        if (((pad.Button & B_LeftArrow) != 0) || (pad.AxisL.Position.x <= -0.6f))
+        if ((pad.Button & B_LeftArrow) != 0)
         {
             pad.Button |= B_MenuLeft;
         }
-        if (((pad.Button & B_RightArrow) != 0) || (pad.AxisL.Position.x >=  0.6f))
+        if ((pad.Button & B_RightArrow) != 0)
         {
             pad.Button |= B_MenuRight;
         }
-        if (((pad.Button & B_DownArrow) != 0) || (pad.AxisL.Position.y <= -0.6f))
+        if ((pad.Button & B_DownArrow) != 0)
         {
             pad.Button |= B_MenuDown;
         }
-        if (((pad.Button & B_UpArrow) != 0) || (pad.AxisL.Position.y >=  0.6f))
+        if ((pad.Button & B_UpArrow) != 0)
         {
             pad.Button |= B_MenuUp;
+        }
+
+        if (padConfig.LeftStickMenu == true)
+        {
+            if (pad.AxisL.Position.x <= -0.6f)
+            {
+                pad.Button |= B_MenuLeft;
+            }
+            if (pad.AxisL.Position.x >=  0.6f)
+            {
+                pad.Button |= B_MenuRight;
+            }
+            if (pad.AxisL.Position.y <= -0.6f)
+            {
+                pad.Button |= B_MenuDown;
+            }
+            if (pad.AxisL.Position.y >=  0.6f)
+            {
+                pad.Button |= B_MenuUp;
+            }
+        }
+
+        if (padConfig.RightStickMenu == true)
+        {
+            if (pad.AxisR.Position.x <= -0.6f)
+            {
+                pad.Button |= B_MenuLeft;
+            }
+            if (pad.AxisR.Position.x >=  0.6f)
+            {
+                pad.Button |= B_MenuRight;
+            }
+            if (pad.AxisR.Position.y <= -0.6f)
+            {
+                pad.Button |= B_MenuDown;
+            }
+            if (pad.AxisR.Position.y >=  0.6f)
+            {
+                pad.Button |= B_MenuUp;
+            }
         }
 
         if ((pad.Button & B_DownButton) != 0)
@@ -950,7 +1038,7 @@ public class PadInput
     /// <summary>
     /// パッドボタンのキーバインド設定
     /// </summary>
-    void setKeyConfig(PadConfig config)
+    void setKeyConfig(KeyConfig config)
     {
         padWorks[(int)ePad.VecUp]        = new PadWork(config.VecU);
         padWorks[(int)ePad.VecRight]     = new PadWork(config.VecR);

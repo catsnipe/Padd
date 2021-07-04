@@ -18,19 +18,35 @@ public class Padd : MonoBehaviour
     }
     
     /// <summary>
+    /// set pad config
+    /// </summary>
+    public static void SetPadConfig(PadInput.PadConfig config)
+    {
+        padd.SetPadConfig(config);
+    }
+
+    /// <summary>
+    /// get pad config
+    /// </summary>
+    public static PadInput.PadConfig GetPadConfig()
+    {
+        return padd.GetPadConfig();
+    }
+    
+    /// <summary>
     /// set key config
     /// </summary>
-    public static void SetKeyConfig(PadInput.PadConfig config)
+    public static void SetKeyConfig(PadInput.KeyConfig config)
     {
-        padd.SetConfig(config);
+        padd.SetKeyConfig(config);
     }
 
     /// <summary>
     /// get key config
     /// </summary>
-    public static PadInput.PadConfig GetKeyConfig()
+    public static PadInput.KeyConfig GetKeyConfig()
     {
-        return padd.GetConfig();
+        return padd.GetKeyConfig();
     }
 
     /// <summary>
