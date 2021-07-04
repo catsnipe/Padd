@@ -1,17 +1,17 @@
 # Padd
-A simple wrapper class for the Input System
+A simple wrapper class for Input System(unity)
 
-# requirement
+## requirement
 unity2019 or later  
 Input System(package)
 
-# features
+## features
 * 'Padd' wraps the Input System with the feel of Input (old).
 * You can see the touch, mouse, pad and keyboard all in the same way.
 * Support for key repeat.
 * Support for mouse and touch swipes.
 
-# usage
+## usage
 1. Install Package '**Input System**'.  
 2. Copy to 'Assets/'.  
   **Padd.cs**  
