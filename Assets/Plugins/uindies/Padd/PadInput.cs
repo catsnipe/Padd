@@ -169,8 +169,8 @@ public class PadInput
                 if (IsMoved == false)
                 {
                     IsMoved = true;
-                    TouchMove.y      = MouseWheel / 6;
-                    touchMoveStart.y = MouseWheel / 6;
+                    TouchMove.y      = -MouseWheel / 6;
+                    touchMoveStart.y = -MouseWheel / 6;
                     touchMoveTime    = Time.time;
                 }
             }
