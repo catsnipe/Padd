@@ -95,6 +95,10 @@ public class PadInput
     /// 矢印キーで使用
     /// </summary>
     public const ulong B_Arrow       = B_UpArrow | B_RightArrow | B_LeftArrow | B_DownArrow;
+    /// <summary>
+    /// メニュー矢印キーで使用
+    /// </summary>
+    public const ulong B_MenuArrow   = B_MenuUp | B_MenuRight | B_MenuLeft | B_MenuDown;
     
     public const int   TOUCH_MAX     = 3;
 
@@ -154,11 +158,20 @@ public class PadInput
                 Move    = v - Position;
                 if (touch == true)
                 {
-                    if (Position != Vector2.zero)
+                    float x0 = Position.x - v.x;
+                    float y0 = Position.y - v.y;
+                    float dist = x0 * x0 + y0 * y0;
+
+                    // 一定量以上の動きがあったら
+                    if (Position != Vector2.zero && dist > 10.0f)
                     {
-                        TouchMove      = v - Position;
-                        touchMoveStart = v - Position;
-                        touchMoveTime  = Time.time;
+                        float curdist = TouchMove.x * TouchMove.x + TouchMove.y * TouchMove.y;
+                        if (dist > curdist)
+                        {
+                            TouchMove      = v - Position;
+                            touchMoveStart = v - Position;
+                            touchMoveTime  = Time.time;
+                        }
                     }
                 }
                 Position = v;
