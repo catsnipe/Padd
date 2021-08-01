@@ -96,7 +96,7 @@ public class Padd : MonoBehaviour
     /// マウスの座標（画面サイズによって変動）を取得します
     /// </summary>
     /// <returns>左0～右画面最大サイズ（横）、下0～上画面最大サイズ（縦）、変化あったフレームは IsMoved == true</returns>
-    public static PadInput.PadVector GetMouse()
+    public static PadInput.MouseVector GetMouse()
     {
         return padd.GetMouse();
     }

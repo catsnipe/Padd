@@ -107,19 +107,12 @@ public class PadInput
     /// </summary>
     public class PadVector
     {
-        public Vector2       StartPosition;
         public Vector2       Position;
         public Vector2       Move;
-        public Vector2       TouchMove;
-        public float         MouseWheel;
         public bool          IsMoved;
 
-        float                touchMoveTime;
-        public Vector2       touchMoveStart;
-
-        const float          SCROLL_TIME  = 0.5f;
         const float          ADJUST_LIMIT = 0.2f;
-        
+
         /// <summary>
         /// Pad の Vector を更新します
         /// </summary>
@@ -147,6 +140,33 @@ public class PadInput
             }
         }
 
+        /// <summary>
+        /// マウスの情報をコピー
+        /// </summary>
+        /// <param name="m"></param>
+        public void MouseCopy(MouseVector m)
+        {
+            Position = m.Position;
+            Move     = m.Move;
+            IsMoved  = m.IsMoved;
+        }
+    }
+
+    public class MouseVector
+    {
+        public Vector2       StartPosition;
+        public Vector2       RawPosition;
+        public Vector2       Position;
+        public Vector2       Move;
+        public Vector2       TouchMove;
+        public float         MouseWheel;
+        public bool          IsMoved;
+
+        float                touchMoveTime;
+        public Vector2       touchMoveStart;
+
+        const float          SCROLL_TIME  = 0.5f;
+        
         /// <summary>
         /// Vector を更新します
         /// </summary>
@@ -182,8 +202,8 @@ public class PadInput
                 if (IsMoved == false)
                 {
                     IsMoved = true;
-                    TouchMove.y      = -MouseWheel / 6;
-                    touchMoveStart.y = -MouseWheel / 6;
+                    TouchMove.y      = -MouseWheel / 2;
+                    touchMoveStart.y = -MouseWheel / 2;
                     touchMoveTime    = Time.time;
                 }
             }
@@ -248,7 +268,7 @@ public class PadInput
         public PadVector       AxisL   = new PadVector();
         public PadVector       AxisR   = new PadVector();
         public PadVector       Trigger = new PadVector();
-        public PadVector       Mouse   = new PadVector();
+        public MouseVector     Mouse   = new MouseVector();
         public List<PadVector> TouchPos = new List<PadVector>();
 
 #if UNITY_STANDALONE || UNITY_EDITOR
@@ -340,10 +360,10 @@ public class PadInput
             ButR   = new Key[] { Key.X, Key.Escape };
             ButL   = new Key[] { Key.C };
             ButU   = new Key[] { Key.V };
-            L1     = new Key[] { Key.Q, Key.LeftShift };
-            R1     = new Key[] { Key.E, Key.LeftCtrl };
-            L2     = new Key[] { Key.RightShift };
-            R2     = new Key[] { Key.RightCtrl };
+            L1     = new Key[] { Key.G };
+            R1     = new Key[] { Key.LeftCtrl };
+            L2     = new Key[] { Key.B };
+            R2     = new Key[] { Key.LeftShift };
             L3     = new Key[] { Key.B };
             R3     = new Key[] { Key.N };
             Select = new Key[] { Key.Digit1 };
@@ -614,7 +634,7 @@ public class PadInput
     /// マウスの座標（画面サイズによって変動）を取得します
     /// </summary>
     /// <returns>左0～右画面最大サイズ（横）、下0～上画面最大サイズ（縦）、変化あったフレームは IsMoved == true</returns>
-    public PadVector GetMouse()
+    public MouseVector GetMouse()
     {
         return pad.Mouse;
     }
@@ -897,9 +917,11 @@ public class PadInput
         }
 
         _mouse = Mouse.current.position.ReadValue();
+        pad.Mouse.RawPosition = _mouse;
 
         // 画面外はノー判定
-        if (Mathf.Abs(_mouse.x) > Screen.width || Mathf.Abs(_mouse.y) > Screen.height)
+        if (_mouse.x < 0 || _mouse.x > Screen.width ||
+            _mouse.y < 0 || _mouse.y > Screen.height)
         {
             return;
         }
@@ -955,7 +977,7 @@ public class PadInput
     void getReserveControl(ulong preButton)
     {
         // UNITY_EDITOR ではマウスをタッチの代わりに見立てる
-        pad.TouchPos[0] = pad.Mouse;
+        pad.TouchPos[0].MouseCopy(pad.Mouse);
 
 #if UNITY_STANDALONE || UNITY_EDITOR
         if ((pad.Button & B_MouseLeft) != 0)
