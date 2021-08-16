@@ -62,7 +62,6 @@ public class TestPadd : MonoBehaviour
             "axisL",
             "axisR",
             "trigger",
-            "mouse",
             "touch1",
         };
         PadInput.PadVector[] vecs = new PadInput.PadVector[]
@@ -70,18 +69,22 @@ public class TestPadd : MonoBehaviour
             Padd.GetAxisL(),
             Padd.GetAxisR(),
             Padd.GetTrigger(),
-            Padd.GetMouse(),
             Padd.GetTouchPos(0)
         }; 
+
+        PadInput.MouseVector mouse = Padd.GetMouse();
 
         for (int i = 0; i < names.Length; i++)
         {
             if (vecs[i].Position.x != 0 || vecs[i].Position.y != 0)
             {
                 sbutton += $"{names[i]}: {vecs[i].IsMoved} {vecs[i].Position.x} {vecs[i].Position.y}\r\n";
-                sbutton += $"{names[i]} swipe: {vecs[i].TouchMove.x} {vecs[i].TouchMove.y}\r\n";
+                sbutton += $"{names[i]} move: {vecs[i].Move.x} {vecs[i].Move.y}\r\n";
             }
         }
+        sbutton += $"mouse: {mouse.IsMoved} {mouse.Position.x} {mouse.Position.y}\r\n";
+        sbutton += $"mouse move: {mouse.Move.x} {mouse.Move.y}\r\n";
+        sbutton += $"mouse touchmove: {mouse.TouchMove.x} {mouse.TouchMove.y}\r\n";
 
         Text.SetText(sbutton);
     }
