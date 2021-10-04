@@ -176,6 +176,17 @@ public class PadInput
             {
                 IsMoved = true;
                 Move    = v - Position;
+
+                // 起動直後、マウスを動かさないと Position に値が入らず、そのままボタンだけ押すと 0,0 -> 急に今現在のポジション値が入る
+                // それが原因で期待値以上の Move になるので、抑制する
+                if (Position.x == 0 && Position.y == 0)
+                {
+                    if (Mathf.Abs(Move.x) > 200 || Mathf.Abs(Move.y) > 200)
+                    {
+                        Move = Vector2.zero;
+                    }
+                }
+
                 if (touch == true)
                 {
                     float x0 = Position.x - v.x;
