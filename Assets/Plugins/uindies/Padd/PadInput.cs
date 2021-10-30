@@ -15,18 +15,27 @@ public enum ePad
     LeftArrow      = 3,
     VecDown        = 4,
     DownArrow      = 4,
+
     UpButton       = 5,
     Triangle       = 5,
     YButton        = 5,
+    XSwitch        = 5,
+
     RightButton    = 6,
     Circle         = 6,
     BButton        = 6,
+    ASwitch        = 6,
+
     LeftButton     = 7,
     Square         = 7,
     XButton        = 7,
+    YSwitch        = 7,
+
     DownButton     = 8,
     Cross          = 8,
     AButton        = 8,
+    BSwitch        = 8,
+
     L1             = 9,
     R1             = 10,
     L2             = 11,
@@ -53,7 +62,7 @@ public enum ePad
     PadMax         = 31,
 };
 
-public class PadInput
+public partial class PadInput
 {
     public const ulong B_None        = (ulong)1 << (int)ePad.None;
     public const ulong B_UpArrow     = (ulong)1 << (int)ePad.UpArrow;
@@ -103,12 +112,21 @@ public class PadInput
     public const int   TOUCH_MAX     = 3;
 
     /// <summary>
-    /// アナログやマウスの入力値、前回との差分などを返します
+    /// アナログスティックやトリガーの入力値、前回との差分などを返します
     /// </summary>
     public class PadVector
     {
+        /// <summary>
+        /// 現在値（0～1）
+        /// </summary>
         public Vector2       Position;
+        /// <summary>
+        /// １フレームに移動した量
+        /// </summary>
         public Vector2       Move;
+        /// <summary>
+        /// 移動があれば true
+        /// </summary>
         public bool          IsMoved;
 
         const float          ADJUST_LIMIT = 0.2f;
@@ -116,7 +134,7 @@ public class PadInput
         /// <summary>
         /// Pad の Vector を更新します
         /// </summary>
-        public void PadUpdate(Vector2 v)
+        public void Update(Vector2 v)
         {
             if (v.x >= -ADJUST_LIMIT && v.x <= ADJUST_LIMIT)
             {
@@ -141,29 +159,52 @@ public class PadInput
         }
 
         /// <summary>
-        /// マウスの情報をコピー
+        /// 情報をクリア
         /// </summary>
-        /// <param name="m"></param>
-        public void MouseCopy(MouseVector m)
+        public void Clear()
         {
-            Position = m.Position;
-            Move     = m.Move;
-            IsMoved  = m.IsMoved;
+            Position = Vector2.zero;
+            Move     = Vector2.zero;
+            IsMoved  = false;
         }
     }
 
-    public class MouseVector
+    /// <summary>
+    /// マウス、タッチの情報
+    /// </summary>
+    public class TouchVector
     {
+        /// <summary>
+        /// マウスの生情報（画面外でも取得）
+        /// </summary>
+        public Vector2       MouseRawPosition;
+        /// <summary>
+        /// 開始位置
+        /// </summary>
         public Vector2       StartPosition;
-        public Vector2       RawPosition;
+        /// <summary>
+        /// 現在の位置
+        /// </summary>
         public Vector2       Position;
+        /// <summary>
+        /// １フレームに移動した量
+        /// </summary>
         public Vector2       Move;
+        /// <summary>
+        /// １フレームに移動した量（マウスクリックしながら）
+        /// </summary>
         public Vector2       TouchMove;
+        /// <summary>
+        /// ホイールの移動量
+        /// </summary>
         public float         MouseWheel;
+        /// <summary>
+        /// 移動があれば true
+        /// </summary>
         public bool          IsMoved;
 
         float                touchMoveTime;
-        public Vector2       touchMoveStart;
+        Vector2              touchMoveStart;
 
         const float          SCROLL_TIME  = 0.5f;
         
@@ -176,17 +217,6 @@ public class PadInput
             {
                 IsMoved = true;
                 Move    = v - Position;
-
-                // 起動直後、マウスを動かさないと Position に値が入らず、そのままボタンだけ押すと 0,0 -> 急に今現在のポジション値が入る
-                // それが原因で期待値以上の Move になるので、抑制する
-                if (Position.x == 0 && Position.y == 0)
-                {
-                    if (Mathf.Abs(Move.x) > 200 || Mathf.Abs(Move.y) > 200)
-                    {
-                        Move = Vector2.zero;
-                    }
-                }
-
                 if (touch == true)
                 {
                     float x0 = Position.x - v.x;
@@ -239,9 +269,38 @@ public class PadInput
             }
         }
 
-        public void ClearUpdate()
+        /// <summary>
+        /// 情報をコピー
+        /// </summary>
+        public void Copy(TouchVector vec)
         {
-            Position = Vector2.zero;
+            StartPosition    = vec.StartPosition ;
+            MouseRawPosition = vec.MouseRawPosition;
+            Position         = vec.Position      ;
+            Move             = vec.Move          ;
+            TouchMove        = vec.TouchMove     ;
+            MouseWheel       = vec.MouseWheel    ;
+            IsMoved          = vec.IsMoved       ;
+            touchMoveTime    = vec.touchMoveTime ;
+            touchMoveStart   = vec.touchMoveStart;
+        }
+
+        /// <summary>
+        /// 情報をクリア
+        /// </summary>
+        public void Clear()
+        {
+            StartPosition    = Vector2.zero;
+            MouseRawPosition = Vector2.zero;
+            Position         = Vector2.zero;
+            Move             = Vector2.zero;
+            TouchMove        = Vector2.zero;
+
+            MouseWheel       = 0;
+            IsMoved          = false;
+
+            touchMoveTime    = 0;
+            touchMoveStart   = Vector2.zero;
         }
 
         /// <summary>
@@ -272,15 +331,15 @@ public class PadInput
 
     class PadInfo
     {
-        public ulong           Button;
-        public ulong           ButtonDown;
-        public ulong           ButtonUp;
-        public ulong           ButtonDelay;
-        public PadVector       AxisL   = new PadVector();
-        public PadVector       AxisR   = new PadVector();
-        public PadVector       Trigger = new PadVector();
-        public MouseVector     Mouse   = new MouseVector();
-        public List<PadVector> TouchPos = new List<PadVector>();
+        public ulong             Button;
+        public ulong             ButtonDown;
+        public ulong             ButtonUp;
+        public ulong             ButtonDelay;
+        public PadVector         AxisL   = new PadVector();
+        public PadVector         AxisR   = new PadVector();
+        public PadVector         Trigger = new PadVector();
+        public TouchVector       Mouse   = new TouchVector();
+        public List<TouchVector> TouchPos = new List<TouchVector>();
 
 #if UNITY_STANDALONE || UNITY_EDITOR
         public bool            KeyboardConnect;
@@ -293,7 +352,7 @@ public class PadInput
         {
             for (int i = 0; i < TOUCH_MAX; i++)
             {
-                TouchPos.Add(new PadVector());
+                TouchPos.Add(new TouchVector());
             }
 
 #if UNITY_STANDALONE || UNITY_EDITOR
@@ -436,7 +495,7 @@ public class PadInput
     RepeatCounter[]  repCounts;
     bool             isEnabled;
     
-#if UNITY_STANDALONE || UNITY_EDITOR
+#if UNITY_STANDALONE || UNITY_EDITOR || UNITY_SWITCH
     static Vector2 _axisL   = new Vector2();
     static Vector2 _axisR   = new Vector2();
     static Vector2 _trigger = new Vector2();
@@ -445,7 +504,7 @@ public class PadInput
     static Vector2 _mouse   = new Vector2();
 #endif
 
-#if UNITY_IOS || UNITY_ANDROID
+#if UNITY_IOS || UNITY_ANDROID || UNITY_SWITCH
     static ePad[]  touchPads = new ePad[TOUCH_MAX] { ePad.Touch1, ePad.Touch2, ePad.Touch3 };
 #endif
 
@@ -645,7 +704,7 @@ public class PadInput
     /// マウスの座標（画面サイズによって変動）を取得します
     /// </summary>
     /// <returns>左0～右画面最大サイズ（横）、下0～上画面最大サイズ（縦）、変化あったフレームは IsMoved == true</returns>
-    public MouseVector GetMouse()
+    public TouchVector GetMouse()
     {
         return pad.Mouse;
     }
@@ -654,7 +713,7 @@ public class PadInput
     /// タッチスクリーンの座標（画面サイズによって変動）を取得します
     /// </summary>
     /// <returns>左0～右画面最大サイズ（横）、下0～上画面最大サイズ（縦）、変化あったフレームは IsMoved == true</returns>
-    public PadVector GetTouchPos(int no)
+    public TouchVector GetTouchPos(int no)
     {
         no = Mathf.Clamp(no, 0, 2);
         return pad.TouchPos[no];
@@ -793,13 +852,13 @@ public class PadInput
             }
             else
             {
-                pad.TouchPos[i].ClearUpdate();
+                pad.TouchPos[i].Clear();
             }
         }
     }
 #endif
 
-#if UNITY_STANDALONE || UNITY_EDITOR
+#if UNITY_STANDALONE || UNITY_EDITOR || UNITY_SWITCH
     /// <summary>
     /// パッド入力を pad.Button に格納。キーアサインつき
     /// </summary>
@@ -829,9 +888,9 @@ public class PadInput
         _axisR     = gamepad.rightStick.ReadValue();
         _trigger.x = gamepad.leftTrigger.ReadValue();
         _trigger.y = gamepad.rightTrigger.ReadValue();
-        pad.AxisL.PadUpdate(_axisL);
-        pad.AxisR.PadUpdate(_axisR);
-        pad.Trigger.PadUpdate(_trigger);
+        pad.AxisL.Update(_axisL);
+        pad.AxisR.Update(_axisR);
+        pad.Trigger.Update(_trigger);
         
         if (gamepad.buttonNorth.isPressed == true)      pad.Button |= getPadBit(ePad.UpButton);
         if (gamepad.buttonEast.isPressed == true)       pad.Button |= getPadBit(ePad.RightButton);
@@ -928,7 +987,7 @@ public class PadInput
         }
 
         _mouse = Mouse.current.position.ReadValue();
-        pad.Mouse.RawPosition = _mouse;
+        pad.Mouse.MouseRawPosition = _mouse;
 
         // 画面外はノー判定
         if (_mouse.x < 0 || _mouse.x > Screen.width ||
@@ -988,7 +1047,10 @@ public class PadInput
     void getReserveControl(ulong preButton)
     {
         // UNITY_EDITOR ではマウスをタッチの代わりに見立てる
-        pad.TouchPos[0].MouseCopy(pad.Mouse);
+        if ((pad.Button & B_MouseLeft) != 0)
+        {
+            pad.TouchPos[0].Copy(pad.Mouse);
+        }
 
 #if UNITY_STANDALONE || UNITY_EDITOR
         if ((pad.Button & B_MouseLeft) != 0)

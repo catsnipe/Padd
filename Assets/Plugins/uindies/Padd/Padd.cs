@@ -96,7 +96,7 @@ public class Padd : MonoBehaviour
     /// マウスの座標（画面サイズによって変動）を取得します
     /// </summary>
     /// <returns>左0～右画面最大サイズ（横）、下0～上画面最大サイズ（縦）、変化あったフレームは IsMoved == true</returns>
-    public static PadInput.MouseVector GetMouse()
+    public static PadInput.TouchVector GetMouse()
     {
         return padd.GetMouse();
     }
@@ -105,7 +105,7 @@ public class Padd : MonoBehaviour
     /// タッチスクリーンの座標（画面サイズによって変動）を取得します
     /// </summary>
     /// <returns>左0～右画面最大サイズ（横）、下0～上画面最大サイズ（縦）、変化あったフレームは IsMoved == true</returns>
-    public static PadInput.PadVector GetTouchPos(int no)
+    public static PadInput.TouchVector GetTouchPos(int no)
     {
         return padd.GetTouchPos(no);
     }

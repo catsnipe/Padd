@@ -18,7 +18,9 @@ public class TestPadd : MonoBehaviour
         if (Text == null) return;
 
         // 確認用
-        string sbutton = "GetKey: ";
+        string sbutton = "";
+
+        sbutton += "GetKey: ";
         for (int i = 0; i < (int)ePad.PadMax; i++)
         {
             ePad epad = (ePad)System.Enum.ToObject(typeof(ePad), i);
@@ -62,29 +64,29 @@ public class TestPadd : MonoBehaviour
             "axisL",
             "axisR",
             "trigger",
-            "touch1",
         };
         PadInput.PadVector[] vecs = new PadInput.PadVector[]
         {
             Padd.GetAxisL(),
             Padd.GetAxisR(),
             Padd.GetTrigger(),
-            Padd.GetTouchPos(0)
-        }; 
+        };
 
-        PadInput.MouseVector mouse = Padd.GetMouse();
+        PadInput.TouchVector mouse = Padd.GetMouse();
+        PadInput.TouchVector touch = Padd.GetTouchPos(0);
 
         for (int i = 0; i < names.Length; i++)
         {
-            if (vecs[i].Position.x != 0 || vecs[i].Position.y != 0)
-            {
-                sbutton += $"{names[i]}: {vecs[i].IsMoved} {vecs[i].Position.x} {vecs[i].Position.y}\r\n";
-                sbutton += $"{names[i]} move: {vecs[i].Move.x} {vecs[i].Move.y}\r\n";
-            }
+            sbutton += $"{names[i]}: {vecs[i].IsMoved} {vecs[i].Position.x} {vecs[i].Position.y}\r\n";
+            sbutton += $"{names[i]} move: {vecs[i].Move.x} {vecs[i].Move.y}\r\n";
         }
         sbutton += $"mouse: {mouse.IsMoved} {mouse.Position.x} {mouse.Position.y}\r\n";
         sbutton += $"mouse move: {mouse.Move.x} {mouse.Move.y}\r\n";
         sbutton += $"mouse touchmove: {mouse.TouchMove.x} {mouse.TouchMove.y}\r\n";
+
+        sbutton += $"touch: {touch.IsMoved} {touch.Position.x} {touch.Position.y}\r\n";
+        sbutton += $"touch move: {touch.Move.x} {touch.Move.y}\r\n";
+        sbutton += $"touch touchmove: {touch.TouchMove.x} {touch.TouchMove.y}\r\n";
 
         Text.SetText(sbutton);
     }
