@@ -195,6 +195,10 @@ public partial class PadInput
         /// </summary>
         public Vector2       TouchMove;
         /// <summary>
+        /// タッチしてから今までにドラッグ移動した量
+        /// </summary>
+        public Vector2       TouchMoveAll;
+        /// <summary>
         /// ホイールの移動量
         /// </summary>
         public float         MouseWheel;
@@ -203,8 +207,7 @@ public partial class PadInput
         /// </summary>
         public bool          IsMoved;
 
-        float                touchMoveTime;
-        Vector2              touchMoveStart;
+        Vector2              topPosition = Vector2.zero;
 
         const float          SCROLL_TIME  = 0.5f;
         
@@ -213,28 +216,28 @@ public partial class PadInput
         /// </summary>
         public void Update(Vector2 v, bool touch)
         {
+            if (touch == true)
+            {
+                if (topPosition == Vector2.zero)
+                {
+                    topPosition = v;
+                }
+                Vector2 pre  = TouchMoveAll;
+
+                TouchMoveAll = v - topPosition;
+                TouchMove    = TouchMoveAll - pre;
+            }
+            else
+            {
+                topPosition  = Vector2.zero;
+                TouchMove    = Vector2.zero;
+                TouchMoveAll = Vector2.zero;
+            }
+
             if (Position.x != v.x || Position.y != v.y)
             {
-                IsMoved = true;
-                Move    = v - Position;
-                if (touch == true)
-                {
-                    float x0 = Position.x - v.x;
-                    float y0 = Position.y - v.y;
-                    float dist = x0 * x0 + y0 * y0;
-
-                    // 一定量以上の動きがあったら
-                    if (Position != Vector2.zero && dist > 10.0f)
-                    {
-                        float curdist = TouchMove.x * TouchMove.x + TouchMove.y * TouchMove.y;
-                        if (dist > curdist)
-                        {
-                            TouchMove      = v - Position;
-                            touchMoveStart = v - Position;
-                            touchMoveTime  = Time.time;
-                        }
-                    }
-                }
+                IsMoved  = true;
+                Move     = v - Position;
                 Position = v;
             }
             else
@@ -243,27 +246,12 @@ public partial class PadInput
                 if (IsMoved == false)
                 {
                     IsMoved = true;
-                    TouchMove.y      = -MouseWheel / 2;
-                    touchMoveStart.y = -MouseWheel / 2;
-                    touchMoveTime    = Time.time;
+                    TouchMove.y    = -MouseWheel / 2;
+                    TouchMoveAll.y = -MouseWheel / 2;
                 }
             }
             else
             {
-                if (touchMoveTime != 0)
-                {
-                    if (touchMoveTime + SCROLL_TIME <= Time.time)
-                    {
-                        TouchMove      = Vector2.zero;
-                        touchMoveStart = Vector2.zero;
-                        touchMoveTime  = 0;
-                    }
-                    else
-                    {
-                        float t = Time.time - touchMoveTime;
-                        TouchMove = touchMoveStart * (1 - cubicOut(t / SCROLL_TIME));
-                    }
-                }
                 Move    = Vector2.zero;
                 IsMoved = false;
             }
@@ -279,10 +267,9 @@ public partial class PadInput
             Position         = vec.Position      ;
             Move             = vec.Move          ;
             TouchMove        = vec.TouchMove     ;
+            TouchMoveAll     = vec.TouchMoveAll  ;
             MouseWheel       = vec.MouseWheel    ;
             IsMoved          = vec.IsMoved       ;
-            touchMoveTime    = vec.touchMoveTime ;
-            touchMoveStart   = vec.touchMoveStart;
         }
 
         /// <summary>
@@ -295,12 +282,10 @@ public partial class PadInput
             Position         = Vector2.zero;
             Move             = Vector2.zero;
             TouchMove        = Vector2.zero;
+            TouchMoveAll     = Vector2.zero;
 
             MouseWheel       = 0;
             IsMoved          = false;
-
-            touchMoveTime    = 0;
-            touchMoveStart   = Vector2.zero;
         }
 
         /// <summary>
