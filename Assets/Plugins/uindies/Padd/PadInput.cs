@@ -209,8 +209,6 @@ public partial class PadInput
 
         Vector2              topPosition = Vector2.zero;
 
-        const float          SCROLL_TIME  = 0.5f;
-        
         /// <summary>
         /// Vector を更新します
         /// </summary>
@@ -270,6 +268,7 @@ public partial class PadInput
             TouchMoveAll     = vec.TouchMoveAll  ;
             MouseWheel       = vec.MouseWheel    ;
             IsMoved          = vec.IsMoved       ;
+            topPosition      = vec.topPosition   ;
         }
 
         /// <summary>
@@ -283,6 +282,7 @@ public partial class PadInput
             Move             = Vector2.zero;
             TouchMove        = Vector2.zero;
             TouchMoveAll     = Vector2.zero;
+            topPosition      = Vector2.zero;
 
             MouseWheel       = 0;
             IsMoved          = false;
@@ -978,6 +978,7 @@ public partial class PadInput
         if (_mouse.x < 0 || _mouse.x > Screen.width ||
             _mouse.y < 0 || _mouse.y > Screen.height)
         {
+            pad.Mouse.Clear();
             return;
         }
 
@@ -1032,10 +1033,9 @@ public partial class PadInput
     void getReserveControl(ulong preButton)
     {
         // UNITY_EDITOR ではマウスをタッチの代わりに見立てる
-        if ((pad.Button & B_MouseLeft) != 0)
-        {
-            pad.TouchPos[0].Copy(pad.Mouse);
-        }
+#if UNITY_STANDALONE || UNITY_EDITOR
+        pad.TouchPos[0].Copy(pad.Mouse);
+#endif
 
 #if UNITY_STANDALONE || UNITY_EDITOR
         if ((pad.Button & B_MouseLeft) != 0)
