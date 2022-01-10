@@ -510,6 +510,10 @@ public partial class PadInput
 
         setKeyConfig(keyConfig);
 
+#if UNITY_SWITCH
+        initializeSwitch();
+#endif
+
         isEnabled = true;
     }
 
@@ -534,6 +538,10 @@ public partial class PadInput
 #if UNITY_STANDALONE || UNITY_EDITOR
             getRawControl_Mouse(preButton);
 #endif
+#if UNITY_SWITCH
+            getRawControl_Switch();
+#endif
+
             // MENU_XXX など
             getReserveControl(preButton);
         }
@@ -844,6 +852,13 @@ public partial class PadInput
 #endif
 
 #if UNITY_STANDALONE || UNITY_EDITOR || UNITY_SWITCH
+    ulong getPadBit(ePad pad)
+    {
+        return (ulong)1 << (int)padConfig.Pad[(int)pad];
+    }
+#endif
+
+#if UNITY_STANDALONE || UNITY_EDITOR
     /// <summary>
     /// パッド入力を pad.Button に格納。キーアサインつき
     /// </summary>
@@ -895,11 +910,6 @@ public partial class PadInput
         if (gamepad.rightStickButton.isPressed == true) pad.Button |= getPadBit(ePad.R3);
         
 //        Debug.Log($"{pad.AnalogL.x} {pad.AnalogL.y} {pad.AnalogR.x} {pad.AnalogR.y} {pad.Trigger.x} {pad.Trigger.y}");
-    }
-
-    ulong getPadBit(ePad pad)
-    {
-        return (ulong)1 << (int)padConfig.Pad[(int)pad];
     }
 
     /// <summary>
