@@ -17,6 +17,15 @@ public class TestPadd : MonoBehaviour
     {
         if (Text == null) return;
 
+
+        Text.SetText(GetInputInfo());
+    }
+
+    /// <summary>
+    /// 入力情報を文字列として取得
+    /// </summary>
+    public static string GetInputInfo()
+    {
         // 確認用
         string sbutton = "";
 
@@ -88,6 +97,7 @@ public class TestPadd : MonoBehaviour
         sbutton += $"touch move: {touch.Move.x} {touch.Move.y}\r\n";
         sbutton += $"touch touchmove: {touch.TouchMove.x} {touch.TouchMove.y}\r\n";
 
-        Text.SetText(sbutton);
+        return sbutton;
     }
+
 }

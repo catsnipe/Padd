@@ -415,9 +415,9 @@ public partial class PadInput
             ButR   = new Key[] { Key.X, Key.Escape };
             ButL   = new Key[] { Key.C };
             ButU   = new Key[] { Key.V };
-            L1     = new Key[] { Key.G };
+            L1     = new Key[] { Key.RightCtrl };
             R1     = new Key[] { Key.LeftCtrl };
-            L2     = new Key[] { Key.B };
+            L2     = new Key[] { Key.RightShift };
             R2     = new Key[] { Key.LeftShift };
             L3     = new Key[] { Key.B };
             R3     = new Key[] { Key.N };
