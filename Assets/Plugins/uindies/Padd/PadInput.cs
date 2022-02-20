@@ -450,6 +450,10 @@ public partial class PadInput
         /// </summary>
         public bool     RightStickMenu;
         /// <summary>
+        /// 決定ボタンを日本ガラパゴス仕様にする
+        /// </summary>
+        public bool     ChangeDecide;
+        /// <summary>
         /// パッド入力入れ替え用
         /// </summary>
         public ePad[]   Pad;
@@ -1042,6 +1046,23 @@ public partial class PadInput
     /// </summary>
     void getReserveControl(ulong preButton)
     {
+        // 決定・キャンセルを入れ替える
+        if (padConfig.ChangeDecide == true)
+        {
+            ulong buttonDecide = pad.Button & B_DownButton;
+            ulong buttonCancel = pad.Button & B_RightButton;
+            
+            pad.Button &= ~(B_RightButton | B_DownButton);
+            if (buttonDecide != 0)
+            {
+                pad.Button |= B_RightButton;
+            }
+            if (buttonCancel != 0)
+            {
+                pad.Button |= B_DownButton;
+            }
+        }
+
         // UNITY_EDITOR ではマウスをタッチの代わりに見立てる
 #if UNITY_STANDALONE || UNITY_EDITOR
         pad.TouchPos[0].Copy(pad.Mouse);
