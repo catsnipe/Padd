@@ -839,13 +839,15 @@ public partial class PadInput
         for (int i = 0; i < touchcnt; i++)
         {
             TouchControl tctl = Touchscreen.current.touches[i];
+
             if (tctl.press.isPressed == true)
             {
                 pad.Button |= (ulong)1 << (int)touchPads[i];
-                if (tctl.press.wasPressedThisFrame == false)
-                {
+                // ?
+                //if (tctl.press.wasPressedThisFrame == false)
+                //{
                     pad.TouchPos[i].Update(tctl.position.ReadValue(), true);
-                }
+                //}
             }
             else
             {
