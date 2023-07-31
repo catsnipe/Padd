@@ -415,10 +415,10 @@ public partial class PadInput
             ButR   = new Key[] { Key.X, Key.Escape };
             ButL   = new Key[] { Key.C };
             ButU   = new Key[] { Key.V };
-            L1     = new Key[] { Key.RightCtrl };
-            R1     = new Key[] { Key.LeftCtrl };
-            L2     = new Key[] { Key.RightShift };
-            R2     = new Key[] { Key.LeftShift };
+            L1     = new Key[] { Key.LeftCtrl };
+            R1     = new Key[] { Key.RightCtrl };
+            L2     = new Key[] { Key.LeftShift };
+            R2     = new Key[] { Key.RightShift };
             L3     = new Key[] { Key.B };
             R3     = new Key[] { Key.N };
             Select = new Key[] { Key.Digit1 };
@@ -551,9 +551,9 @@ public partial class PadInput
         }
 
         // push
-        pad.ButtonDown   =  pad.Button & ~preButton;
+        pad.ButtonDown  =  pad.Button & ~preButton;
         // release
-        pad.ButtonUp     = ~pad.Button &  preButton;
+        pad.ButtonUp    = ~pad.Button &  preButton;
 
         // repeat
         pad.ButtonDelay =  pad.ButtonDown;
@@ -1166,22 +1166,64 @@ public partial class PadInput
     /// </summary>
     void setKeyConfig(KeyConfig config)
     {
-        padWorks[(int)ePad.VecUp]        = new PadWork(config.VecU);
-        padWorks[(int)ePad.VecRight]     = new PadWork(config.VecR);
-        padWorks[(int)ePad.VecLeft]      = new PadWork(config.VecL);
-        padWorks[(int)ePad.VecDown]      = new PadWork(config.VecD);
-        padWorks[(int)ePad.UpButton]     = new PadWork(config.ButU);
-        padWorks[(int)ePad.RightButton]  = new PadWork(config.ButR);
-        padWorks[(int)ePad.LeftButton]   = new PadWork(config.ButL);
-        padWorks[(int)ePad.DownButton]   = new PadWork(config.ButD);
-        padWorks[(int)ePad.L1]           = new PadWork(config.L1);
-        padWorks[(int)ePad.R1]           = new PadWork(config.R1);
-        padWorks[(int)ePad.L2]           = new PadWork(config.L2);
-        padWorks[(int)ePad.R2]           = new PadWork(config.R2);
-        padWorks[(int)ePad.L3]           = new PadWork(config.L3);
-        padWorks[(int)ePad.R3]           = new PadWork(config.R3);
-        padWorks[(int)ePad.Select]       = new PadWork(config.Select);
-        padWorks[(int)ePad.Start]        = new PadWork(config.Start);
-        padWorks[(int)ePad.Touch1]       = new PadWork(config.Touch1);
+        List<ePad> padButtons = new List<ePad>
+        {
+            ePad.VecUp,
+            ePad.VecRight,
+            ePad.VecLeft,
+            ePad.VecDown,
+            ePad.UpButton,
+            ePad.RightButton,
+            ePad.LeftButton,
+            ePad.DownButton,
+            ePad.L1,
+            ePad.R1,
+            ePad.L2,
+            ePad.R2,
+            ePad.L3,
+            ePad.R3,
+            ePad.Select,
+            ePad.Start,
+            ePad.Touch1,
+        };
+
+        List<Key[]> keyButtons = new List<Key[]>
+        {
+            config.VecU,
+            config.VecR,
+            config.VecL,
+            config.VecD,
+            config.ButU,
+            config.ButR,
+            config.ButL,
+            config.ButD,
+            config.L1,
+            config.R1,
+            config.L2,
+            config.R2,
+            config.L3,
+            config.R3,
+            config.Select,
+            config.Start,
+            config.Touch1,
+        };
+
+#if UNITY_EDITOR
+        System.Text.StringBuilder debugLog = new System.Text.StringBuilder();
+        debugLog.AppendLine("[PadInput KeyConfig]");
+#endif
+
+        for (int i = 0; i < padButtons.Count; i++)
+        {
+            var padButton = padButtons[i];
+            var keyButton = keyButtons[i];
+
+            padWorks[(int)padButton] = new PadWork(keyButton);
+#if UNITY_EDITOR
+            debugLog.AppendLine($"  {padButton.ToString().PadRight(10, ' ')}: {string.Join(",", keyButton)}");
+#endif
+        }
+
+        Debug.Log(debugLog);
     }
 }
