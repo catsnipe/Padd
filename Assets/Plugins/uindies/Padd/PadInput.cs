@@ -1224,6 +1224,8 @@ public partial class PadInput
 #endif
         }
 
+#if UNITY_EDITOR
         Debug.Log(debugLog);
+#endif
     }
 }
