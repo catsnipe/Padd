@@ -62,6 +62,15 @@ public enum ePad
     PadMax         = 31,
 };
 
+public enum ePadControllerType
+{
+    None,
+    Pad,
+    Keyboard,
+    Mouse,
+    Touch,
+}
+
 public partial class PadInput
 {
     public const ulong B_None        = (ulong)1 << (int)ePad.None;
@@ -316,21 +325,23 @@ public partial class PadInput
 
     class PadInfo
     {
-        public ulong             Button;
-        public ulong             ButtonDown;
-        public ulong             ButtonUp;
-        public ulong             ButtonDelay;
-        public PadVector         AxisL   = new PadVector();
-        public PadVector         AxisR   = new PadVector();
-        public PadVector         Trigger = new PadVector();
-        public TouchVector       Mouse   = new TouchVector();
-        public List<TouchVector> TouchPos = new List<TouchVector>();
+        public ulong              Button;
+        public ulong              ButtonDown;
+        public ulong              ButtonUp;
+        public ulong              ButtonDelay;
+        public PadVector          AxisL   = new PadVector();
+        public PadVector          AxisR   = new PadVector();
+        public PadVector          Trigger = new PadVector();
+        public TouchVector        Mouse   = new TouchVector();
+        public List<TouchVector>  TouchPos = new List<TouchVector>();
+
+        public ePadControllerType LastControllerType;  
 
 #if UNITY_STANDALONE || UNITY_EDITOR
-        public bool            KeyboardConnect;
-        public bool            GamePadConnect;
+        public bool               KeyboardConnect;
+        public bool               GamePadConnect;
 #endif
-        public bool            MouseConnect;
+        public bool               MouseConnect;
 
         /// <summary>.ctor</summary>
         public PadInfo()
@@ -339,6 +350,8 @@ public partial class PadInput
             {
                 TouchPos.Add(new TouchVector());
             }
+
+            LastControllerType = ePadControllerType.None;
 
 #if UNITY_STANDALONE || UNITY_EDITOR
             KeyboardConnect = true;
@@ -362,7 +375,7 @@ public partial class PadInput
         public int      RepeatCount = 0;
     }
 
-    class PadWork
+    public class PadWork
     {
         public Key[]    KeyBinds;
 
@@ -415,10 +428,10 @@ public partial class PadInput
             ButR   = new Key[] { Key.X, Key.Escape };
             ButL   = new Key[] { Key.C };
             ButU   = new Key[] { Key.V };
-            L1     = new Key[] { Key.LeftCtrl };
-            R1     = new Key[] { Key.RightCtrl };
-            L2     = new Key[] { Key.LeftShift };
-            R2     = new Key[] { Key.RightShift };
+            L1     = new Key[] { Key.F1 };
+            R1     = new Key[] { Key.F2 };
+            L2     = new Key[] { Key.F3 };
+            R2     = new Key[] { Key.F4 };
             L3     = new Key[] { Key.B };
             R3     = new Key[] { Key.N };
             Select = new Key[] { Key.Digit1 };
@@ -450,9 +463,9 @@ public partial class PadInput
         /// </summary>
         public bool     RightStickMenu;
         /// <summary>
-        /// 決定ボタンを日本ガラパゴス仕様にする
+        /// AB ボタン入れ替え
         /// </summary>
-        public bool     ChangeDecide;
+        public bool     SwapAB;
         /// <summary>
         /// パッド入力入れ替え用
         /// </summary>
@@ -515,7 +528,12 @@ public partial class PadInput
         setKeyConfig(keyConfig);
 
 #if UNITY_SWITCH
+        pad.LastControllerType = ePadControllerType.Pad;
         initializeSwitch();
+#elif UNITY_STANDALONE
+        pad.LastControllerType = ePadControllerType.Pad;
+#elif UNITY_IOS || UNITY_ANDROID
+        pad.LastControllerType = ePadControllerType.Touch;
 #endif
 
         isEnabled = true;
@@ -538,8 +556,7 @@ public partial class PadInput
 #if UNITY_STANDALONE || UNITY_EDITOR
             getRawControl_Keyboard();
             getRawControl_Pad();
-#endif
-#if UNITY_STANDALONE || UNITY_EDITOR
+
             getRawControl_Mouse(preButton);
 #endif
 #if UNITY_SWITCH
@@ -551,10 +568,12 @@ public partial class PadInput
         }
 
         // push
-        pad.ButtonDown  =  pad.Button & ~preButton;
+        pad.ButtonDown   =  pad.Button & ~preButton;
         // release
-        pad.ButtonUp    = ~pad.Button &  preButton;
+        pad.ButtonUp     = ~pad.Button &  preButton;
 
+//DDisp.Log($"{pad.LastControllerType}");
+//DDisp.Log($"{pad.Button.ToString("X16")}");
         // repeat
         pad.ButtonDelay =  pad.ButtonDown;
 
@@ -648,6 +667,14 @@ public partial class PadInput
             memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
             return (KeyConfig)binaryFormatter.Deserialize(memoryStream);
         }
+    }
+
+    /// <summary>
+    /// パッドボタンに対応したキーボードリストを取得する
+    /// </summary>
+    public PadWork GetPadWork(ePad padButton)
+    {
+        return padWorks[(int)padButton];
     }
 
     /// <summary>
@@ -806,6 +833,14 @@ public partial class PadInput
     }
 
     /// <summary>
+    /// 最後に操作されたコントローラーの種類を取得
+    /// </summary>
+    public ePadControllerType GetLastControllerType()
+    {
+        return pad.LastControllerType;
+    }
+
+    /// <summary>
     /// Input 直接コール
     /// </summary>
     public bool NativeKey(Key key)
@@ -836,23 +871,28 @@ public partial class PadInput
 
         int touchcnt = Touchscreen.current.touches.Count < TOUCH_MAX ? Touchscreen.current.touches.Count : TOUCH_MAX;
 
+        ulong button = pad.Button;
+
         for (int i = 0; i < touchcnt; i++)
         {
             TouchControl tctl = Touchscreen.current.touches[i];
-
             if (tctl.press.isPressed == true)
             {
                 pad.Button |= (ulong)1 << (int)touchPads[i];
-                // ?
-                //if (tctl.press.wasPressedThisFrame == false)
-                //{
+                if (tctl.press.wasPressedThisFrame == false)
+                {
                     pad.TouchPos[i].Update(tctl.position.ReadValue(), true);
-                //}
+                }
             }
             else
             {
                 pad.TouchPos[i].Clear();
             }
+        }
+
+        if (pad.Button != button)
+        {
+            pad.LastControllerType = ePadControllerType.Touch;
         }
     }
 #endif
@@ -898,6 +938,8 @@ public partial class PadInput
         pad.AxisR.Update(_axisR);
         pad.Trigger.Update(_trigger);
         
+        ulong button = pad.Button;
+
         if (gamepad.buttonNorth.isPressed == true)      pad.Button |= getPadBit(ePad.UpButton);
         if (gamepad.buttonEast.isPressed == true)       pad.Button |= getPadBit(ePad.RightButton);
         if (gamepad.buttonWest.isPressed == true)       pad.Button |= getPadBit(ePad.LeftButton);
@@ -915,6 +957,10 @@ public partial class PadInput
         if (gamepad.leftStickButton.isPressed == true)  pad.Button |= getPadBit(ePad.L3);
         if (gamepad.rightStickButton.isPressed == true) pad.Button |= getPadBit(ePad.R3);
         
+        if (pad.Button != button)
+        {
+            pad.LastControllerType = ePadControllerType.Pad;
+        }
 //        Debug.Log($"{pad.AnalogL.x} {pad.AnalogL.y} {pad.AnalogR.x} {pad.AnalogR.y} {pad.Trigger.x} {pad.Trigger.y}");
     }
 
@@ -941,6 +987,8 @@ public partial class PadInput
             }
         }
 
+        ulong button = pad.Button;
+
         for (int i = 0; i < padWorks.Length; i++)
         {
             if (padWorks[i] == null)
@@ -960,14 +1008,21 @@ public partial class PadInput
                 }
             }
         }
+
+#if UNITY_STANDALONE
+        if (pad.Button != button)
+        {
+            pad.LastControllerType = ePadControllerType.Keyboard;
+        }
+#endif
     }
 #endif
 
 #if UNITY_STANDALONE || UNITY_EDITOR
-    /// <summary>
-    /// マウスの入力を pad.Button に変換し、格納
-    /// </summary>
-    void getRawControl_Mouse(ulong preButton)
+        /// <summary>
+        /// マウスの入力を pad.Button に変換し、格納
+        /// </summary>
+        void getRawControl_Mouse(ulong preButton)
     {
         if (Mouse.current == null)
         {
@@ -997,6 +1052,8 @@ public partial class PadInput
             pad.Mouse.Clear();
             return;
         }
+
+        ulong button = pad.Button;
 
         bool[] pressed =
         {
@@ -1040,6 +1097,13 @@ public partial class PadInput
         {
             pad.Button |= B_Click;
         }
+
+#if UNITY_STANDALONE
+        if (pad.Button != button)
+        {
+            pad.LastControllerType = ePadControllerType.Mouse;
+        }
+#endif
     }
 #endif
 
@@ -1049,7 +1113,7 @@ public partial class PadInput
     void getReserveControl(ulong preButton)
     {
         // 決定・キャンセルを入れ替える
-        if (padConfig.ChangeDecide == true)
+        if (padConfig.SwapAB == true)
         {
             ulong buttonDecide = pad.Button & B_DownButton;
             ulong buttonCancel = pad.Button & B_RightButton;
@@ -1064,7 +1128,7 @@ public partial class PadInput
                 pad.Button |= B_DownButton;
             }
         }
-
+        
         // UNITY_EDITOR ではマウスをタッチの代わりに見立てる
 #if UNITY_STANDALONE || UNITY_EDITOR
         pad.TouchPos[0].Copy(pad.Mouse);
@@ -1166,6 +1230,27 @@ public partial class PadInput
     /// </summary>
     void setKeyConfig(KeyConfig config)
     {
+        List<string> buttonNames = new List<string>
+        {
+            "VecUp",
+            "VecRight",
+            "VecLeft",
+            "VecDown",
+            "UpButton",
+            "RightButton",
+            "LeftButton",
+            "DownButton",
+            "L1",
+            "R1",
+            "L2",
+            "R2",
+            "L3",
+            "R3",
+            "Select",
+            "Start",
+            "Touch1",
+        };
+
         List<ePad> padButtons = new List<ePad>
         {
             ePad.VecUp,
@@ -1215,12 +1300,13 @@ public partial class PadInput
 
         for (int i = 0; i < padButtons.Count; i++)
         {
-            var padButton = padButtons[i];
-            var keyButton = keyButtons[i];
+            var padButton  = padButtons[i];
+            var keyButton  = keyButtons[i];
+            var buttonName = buttonNames[i];
 
             padWorks[(int)padButton] = new PadWork(keyButton);
 #if UNITY_EDITOR
-            debugLog.AppendLine($"  {padButton.ToString().PadRight(10, ' ')}: {string.Join(",", keyButton)}");
+            debugLog.AppendLine($"  {buttonName.PadRight(10, ' ')}: {string.Join(",", keyButton)}");
 #endif
         }
 
