@@ -957,7 +957,10 @@ public partial class PadInput
         if (gamepad.leftStickButton.isPressed == true)  pad.Button |= getPadBit(ePad.L3);
         if (gamepad.rightStickButton.isPressed == true) pad.Button |= getPadBit(ePad.R3);
         
-        if (pad.Button != button)
+        if (pad.Button != button ||
+            pad.AxisL.IsMoved == true ||
+            pad.AxisR.IsMoved == true ||
+            pad.Trigger.IsMoved == true )
         {
             pad.LastControllerType = ePadControllerType.Pad;
         }
@@ -1099,7 +1102,8 @@ public partial class PadInput
         }
 
 #if UNITY_STANDALONE
-        if (pad.Button != button)
+        if (pad.Button != button ||
+            pad.Mouse.IsMoved == true )
         {
             pad.LastControllerType = ePadControllerType.Mouse;
         }
