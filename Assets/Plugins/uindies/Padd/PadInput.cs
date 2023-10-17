@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
+[Serializable]
 public enum ePad
 {
     None           = 0,
@@ -1102,11 +1103,11 @@ public partial class PadInput
         }
 
 #if UNITY_STANDALONE
-        if (pad.Button != button ||
-            pad.Mouse.IsMoved == true )
-        {
-            pad.LastControllerType = ePadControllerType.Mouse;
-        }
+        //if (pad.Button != button ||
+        //    pad.Mouse.IsMoved == true )
+        //{
+        //    pad.LastControllerType = ePadControllerType.Mouse;
+        //}
 #endif
     }
 #endif
