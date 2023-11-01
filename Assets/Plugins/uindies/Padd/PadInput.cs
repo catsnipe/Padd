@@ -491,6 +491,7 @@ public partial class PadInput
         }
     }
 
+    Vector2          virtualSize = new Vector2(1920, 1080);
     PadInfo          pad;
     PadConfig        padConfig;
     KeyConfig        keyConfig;
@@ -623,6 +624,14 @@ public partial class PadInput
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// ディスプレイの仮想サイズを設定. CanvasScaler.referenceResolution と同じ値にするのが基本
+    /// </summary>
+    public void SetVirtualSize(float width, float height)
+    {
+        virtualSize = new Vector2(width, height);
     }
 
     /// <summary>
@@ -882,7 +891,17 @@ public partial class PadInput
                 pad.Button |= (ulong)1 << (int)touchPads[i];
                 if (tctl.press.wasPressedThisFrame == false)
                 {
-                    pad.TouchPos[i].Update(tctl.position.ReadValue(), true);
+                    Vector2 vec = tctl.position.ReadValue();
+                    if (virtualSize.x != Screen.width)
+                    {
+                        vec.x = vec.x * virtualSize.x / Screen.width;
+                    }
+                    if (virtualSize.y != Screen.height)
+                    {
+                        vec.y = vec.y * virtualSize.y / Screen.height;
+                    }
+
+                    pad.TouchPos[i].Update(vec, true);
                 }
             }
             else
@@ -1023,10 +1042,10 @@ public partial class PadInput
 #endif
 
 #if UNITY_STANDALONE || UNITY_EDITOR
-        /// <summary>
-        /// マウスの入力を pad.Button に変換し、格納
-        /// </summary>
-        void getRawControl_Mouse(ulong preButton)
+    /// <summary>
+    /// マウスの入力を pad.Button に変換し、格納
+    /// </summary>
+    void getRawControl_Mouse(ulong preButton)
     {
         if (Mouse.current == null)
         {
@@ -1117,6 +1136,34 @@ public partial class PadInput
     /// </summary>
     void getReserveControl(ulong preButton)
     {
+        // UNITY_EDITOR ではマウスをタッチの代わりに見立てる
+#if UNITY_STANDALONE || UNITY_EDITOR
+        pad.TouchPos[0].Copy(pad.Mouse);
+#endif
+
+#if UNITY_STANDALONE || UNITY_EDITOR
+        //if ((pad.Button & B_MouseLeft) != 0)
+        //{
+        //    pad.Button |= B_Touch1 | B_DownButton;
+        //}
+        //if ((pad.Button & B_MouseRight) != 0)
+        //{
+        //    pad.Button |= B_RightButton;
+        //}
+#else
+        if ((pad.Button & B_Touch1) != 0)
+        {
+            pad.Button |= B_MouseLeft;
+        }
+        if (
+            (preButton & B_Touch1)  != 0 &&
+            (pad.Button & B_Touch1) == 0
+        )
+        {
+            pad.Button |= B_Click;
+        }
+#endif
+
         // 決定・キャンセルを入れ替える
         if (padConfig.SwapAB == true)
         {
@@ -1134,30 +1181,6 @@ public partial class PadInput
             }
         }
         
-        // UNITY_EDITOR ではマウスをタッチの代わりに見立てる
-#if UNITY_STANDALONE || UNITY_EDITOR
-        pad.TouchPos[0].Copy(pad.Mouse);
-#endif
-
-#if UNITY_STANDALONE || UNITY_EDITOR
-        if ((pad.Button & B_MouseLeft) != 0)
-        {
-            pad.Button |= B_Touch1;
-        }
-#else
-        if ((pad.Button & B_Touch1) != 0)
-        {
-            pad.Button |= B_MouseLeft;
-        }
-        if (
-            (preButton & B_Touch1)  != 0 &&
-            (pad.Button & B_Touch1) == 0
-        )
-        {
-            pad.Button |= B_Click;
-        }
-#endif
-
         if ((pad.Button & B_LeftArrow) != 0)
         {
             pad.Button |= B_MenuLeft;

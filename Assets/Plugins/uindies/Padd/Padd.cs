@@ -18,6 +18,14 @@ public class Padd : MonoBehaviour
     }
     
     /// <summary>
+    /// ディスプレイの仮想サイズを設定. CanvasScaler.referenceResolution と同じ値にするのが基本
+    /// </summary>
+    public static void SetVirtualSize(float width, float height)
+    {
+        padd.SetVirtualSize(width, height);
+    }
+
+    /// <summary>
     /// set pad config
     /// </summary>
     public static void SetPadConfig(PadInput.PadConfig config)
@@ -47,6 +55,14 @@ public class Padd : MonoBehaviour
     public static PadInput.KeyConfig GetKeyConfig()
     {
         return padd.GetKeyConfig();
+    }
+
+    /// <summary>
+    /// パッドボタンに対応したキーボードリストを取得する
+    /// </summary>
+    public static PadInput.PadWork GetPadWork(ePad padButton)
+    {
+        return padd.GetPadWork(padButton);
     }
 
     /// <summary>
@@ -198,6 +214,14 @@ public class Padd : MonoBehaviour
         return padd.GetKeyDelay(buttonBit);
     }
     
+    /// <summary>
+    /// 最後に操作されたコントローラーの種類を取得
+    /// </summary>
+    public static ePadControllerType GetLastControllerType()
+    {
+        return padd.GetLastControllerType();
+    }
+
     /// <summary>
     /// Input 直接コール
     /// </summary>
