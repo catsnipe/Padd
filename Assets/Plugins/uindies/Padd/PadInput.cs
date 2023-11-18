@@ -892,14 +892,8 @@ public partial class PadInput
                 if (tctl.press.wasPressedThisFrame == false)
                 {
                     Vector2 vec = tctl.position.ReadValue();
-                    if (virtualSize.x != Screen.width)
-                    {
-                        vec.x = vec.x * virtualSize.x / Screen.width;
-                    }
-                    if (virtualSize.y != Screen.height)
-                    {
-                        vec.y = vec.y * virtualSize.y / Screen.height;
-                    }
+
+                    vec = getVirtualPosition(vec);
 
                     pad.TouchPos[i].Update(vec, true);
                 }
@@ -1041,6 +1035,84 @@ public partial class PadInput
     }
 #endif
 
+    Vector2 getVirtualPosition(Vector2 pos)
+    {
+        if (virtualSize.x != Screen.width || virtualSize.y != Screen.height)
+        {
+            float scale_w = Screen.width  / virtualSize.x;
+            float scale_h = Screen.height / virtualSize.y;
+
+            float maskWidth;
+            float maskHeight;
+
+            if (Mathf.Abs(scale_w - scale_h) < 0.001f)
+            {
+                maskWidth  = 0;
+                maskHeight = 0;
+            }
+            else
+            if (scale_w > scale_h)
+            {
+                // 横方向にマスク
+                maskWidth = ((Screen.width / scale_h) - virtualSize.x) / 2;
+                maskWidth *= scale_h;
+                maskHeight = 0;
+            }
+            else
+            {
+                // 縦方向にマスク
+                maskWidth  = 0;
+                maskHeight = ((Screen.height / scale_w) - virtualSize.y) / 2;
+                maskHeight *= scale_w;
+            }
+
+            if (maskWidth > 0)
+            {
+                if (pos.x < maskWidth)
+                {
+                    pos.x = -1;
+                }
+                else
+                if (pos.x > Screen.width - maskWidth)
+                {
+                    pos.x = virtualSize.x + 1;
+                }
+                else
+                {
+                    pos.x = (pos.x - maskWidth) / scale_h;
+                }
+                pos.y = pos.y *  virtualSize.y / Screen.height;
+
+            }
+            else
+            if (maskHeight > 0)
+            {
+                if (pos.y < maskHeight)
+                {
+                    pos.y = -1;
+                }
+                else
+                if (pos.y > Screen.height - maskHeight)
+                {
+                    pos.y = virtualSize.y + 1;
+                }
+                else
+                {
+                    pos.y = (pos.y - maskHeight) / scale_w;
+                }
+                pos.x = pos.x * virtualSize.x / Screen.width;
+            }
+            else
+            if (maskHeight == 0)
+            {
+                pos.x = pos.x * virtualSize.x / Screen.width;
+                pos.y = pos.y * virtualSize.y / Screen.height;
+            }
+        }
+
+        return pos;
+    }
+
 #if UNITY_STANDALONE || UNITY_EDITOR
     /// <summary>
     /// マウスの入力を pad.Button に変換し、格納
@@ -1066,14 +1138,29 @@ public partial class PadInput
         }
 
         _mouse = Mouse.current.position.ReadValue();
+
+        _mouse = getVirtualPosition(_mouse);
+
         pad.Mouse.MouseRawPosition = _mouse;
 
-        // 画面外はノー判定
-        if (_mouse.x < 0 || _mouse.x > Screen.width ||
-            _mouse.y < 0 || _mouse.y > Screen.height)
+        // clipping
+        if (virtualSize.x == 0 && virtualSize.y == 0)
         {
-            pad.Mouse.Clear();
-            return;
+            if (_mouse.x < 0 || (_mouse.x > Screen.width ) ||
+                _mouse.y < 0 || (_mouse.y > Screen.height))
+            {
+                pad.Mouse.Clear();
+                return;
+            }
+        }
+        else
+        {
+            if (_mouse.x < 0 || (_mouse.x > virtualSize.x) ||
+                _mouse.y < 0 || (_mouse.y > virtualSize.y))
+            {
+                pad.Mouse.Clear();
+                return;
+            }
         }
 
         ulong button = pad.Button;

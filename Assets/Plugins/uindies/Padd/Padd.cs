@@ -7,14 +7,27 @@ using UnityEngine.InputSystem;
 
 public class Padd : MonoBehaviour
 {
-    static PadInput padd = new PadInput();
+    static Padd     paddObject;
+    static PadInput padInput = new PadInput();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void afterSceneLoad()
+    {
+        paddObject = FindObjectOfType<Padd>();
+        if (paddObject == null)
+        {
+            GameObject obj = new GameObject("Padd", typeof(Padd));
+            paddObject = obj.GetComponent<Padd>();
+
+        }
+    }
 
     /// <summary>
     /// update
     /// </summary>
     void Update()
     {
-        padd?.Update();
+        padInput?.Update();
     }
     
     /// <summary>
@@ -22,7 +35,7 @@ public class Padd : MonoBehaviour
     /// </summary>
     public static void SetVirtualSize(float width, float height)
     {
-        padd.SetVirtualSize(width, height);
+        padInput.SetVirtualSize(width, height);
     }
 
     /// <summary>
@@ -30,7 +43,7 @@ public class Padd : MonoBehaviour
     /// </summary>
     public static void SetPadConfig(PadInput.PadConfig config)
     {
-        padd.SetPadConfig(config);
+        padInput.SetPadConfig(config);
     }
 
     /// <summary>
@@ -38,7 +51,7 @@ public class Padd : MonoBehaviour
     /// </summary>
     public static PadInput.PadConfig GetPadConfig()
     {
-        return padd.GetPadConfig();
+        return padInput.GetPadConfig();
     }
     
     /// <summary>
@@ -46,7 +59,7 @@ public class Padd : MonoBehaviour
     /// </summary>
     public static void SetKeyConfig(PadInput.KeyConfig config)
     {
-        padd.SetKeyConfig(config);
+        padInput.SetKeyConfig(config);
     }
 
     /// <summary>
@@ -54,7 +67,7 @@ public class Padd : MonoBehaviour
     /// </summary>
     public static PadInput.KeyConfig GetKeyConfig()
     {
-        return padd.GetKeyConfig();
+        return padInput.GetKeyConfig();
     }
 
     /// <summary>
@@ -62,7 +75,7 @@ public class Padd : MonoBehaviour
     /// </summary>
     public static PadInput.PadWork GetPadWork(ePad padButton)
     {
-        return padd.GetPadWork(padButton);
+        return padInput.GetPadWork(padButton);
     }
 
     /// <summary>
@@ -70,7 +83,7 @@ public class Padd : MonoBehaviour
     /// </summary>
     public static void SetEnabled(bool enabled)
     {
-        padd.SetEnabled(enabled);
+        padInput.SetEnabled(enabled);
     }
 
     /// <summary>
@@ -78,7 +91,7 @@ public class Padd : MonoBehaviour
     /// </summary>
     public static bool GetEnabled()
     {
-        return padd.GetEnabled();
+        return padInput.GetEnabled();
     }
 
     /// <summary>
@@ -87,7 +100,7 @@ public class Padd : MonoBehaviour
     /// <returns>-1（左上）～ 1（右下）、変化あったフレームは IsMoved == true</returns>
     public static PadInput.PadVector GetAxisL()
     {
-        return padd.GetAxisL();
+        return padInput.GetAxisL();
     }
 
     /// <summary>
@@ -96,7 +109,7 @@ public class Padd : MonoBehaviour
     /// <returns>-1（左上）～ 1（右下）、変化あったフレームは IsMoved == true</returns>
     public static PadInput.PadVector GetAxisR()
     {
-        return padd.GetAxisR();
+        return padInput.GetAxisR();
     }
 
     /// <summary>
@@ -105,7 +118,7 @@ public class Padd : MonoBehaviour
     /// <returns>-1（押していない）～ 1（深く押している）、変化あったフレームは IsMoved == true</returns>
     public static PadInput.PadVector GetTrigger()
     {
-        return padd.GetTrigger();
+        return padInput.GetTrigger();
     }
 
     /// <summary>
@@ -114,7 +127,7 @@ public class Padd : MonoBehaviour
     /// <returns>左0～右画面最大サイズ（横）、下0～上画面最大サイズ（縦）、変化あったフレームは IsMoved == true</returns>
     public static PadInput.TouchVector GetMouse()
     {
-        return padd.GetMouse();
+        return padInput.GetMouse();
     }
 
     /// <summary>
@@ -123,7 +136,7 @@ public class Padd : MonoBehaviour
     /// <returns>左0～右画面最大サイズ（横）、下0～上画面最大サイズ（縦）、変化あったフレームは IsMoved == true</returns>
     public static PadInput.TouchVector GetTouchPos(int no)
     {
-        return padd.GetTouchPos(no);
+        return padInput.GetTouchPos(no);
     }
 
     /// <summary>
@@ -131,7 +144,7 @@ public class Padd : MonoBehaviour
     /// </summary>
     public static float GetMouseWheel()
     {
-        return padd.GetMouseWheel();
+        return padInput.GetMouseWheel();
     }
 
     /// <summary>
@@ -141,7 +154,7 @@ public class Padd : MonoBehaviour
     /// <returns>押されていれば true</returns>
     public static bool GetKey(ePad button)
     {
-        return padd.GetKey(button);
+        return padInput.GetKey(button);
     }
 
     /// <summary>
@@ -151,7 +164,7 @@ public class Padd : MonoBehaviour
     /// <returns>押されていれば true</returns>
     public static bool GetKey(ulong buttonBit)
     {
-        return padd.GetKey(buttonBit);
+        return padInput.GetKey(buttonBit);
     }
 
     /// <summary>
@@ -161,7 +174,7 @@ public class Padd : MonoBehaviour
     /// <returns>押された瞬間なら true</returns>
     public static bool GetKeyDown(ePad button)
     {
-        return padd.GetKeyDown(button);
+        return padInput.GetKeyDown(button);
     }
 
     /// <summary>
@@ -171,7 +184,7 @@ public class Padd : MonoBehaviour
     /// <returns>押された瞬間なら true</returns>
     public static bool GetKeyDown(ulong buttonBit)
     {
-        return padd.GetKeyDown(buttonBit);
+        return padInput.GetKeyDown(buttonBit);
     }
 
     /// <summary>
@@ -181,7 +194,7 @@ public class Padd : MonoBehaviour
     /// <returns>離した瞬間なら true</returns>
     public static bool GetKeyUp(ePad button)
     {
-        return padd.GetKeyUp(button);
+        return padInput.GetKeyUp(button);
     }
 
     /// <summary>
@@ -191,7 +204,7 @@ public class Padd : MonoBehaviour
     /// <returns>離した瞬間なら true</returns>
     public static bool GetKeyUp(ulong buttonBit)
     {
-        return padd.GetKeyUp(buttonBit);
+        return padInput.GetKeyUp(buttonBit);
     }
 
     /// <summary>
@@ -201,7 +214,7 @@ public class Padd : MonoBehaviour
     /// <returns>リピートオンされた瞬間なら true</returns>
     public static bool GetKeyDelay(ePad button)
     {
-        return padd.GetKeyDelay(button);
+        return padInput.GetKeyDelay(button);
     }
 
     /// <summary>
@@ -211,7 +224,7 @@ public class Padd : MonoBehaviour
     /// <returns>リピートオンされた瞬間なら true</returns>
     public static bool GetKeyDelay(ulong buttonBit)
     {
-        return padd.GetKeyDelay(buttonBit);
+        return padInput.GetKeyDelay(buttonBit);
     }
     
     /// <summary>
@@ -219,7 +232,7 @@ public class Padd : MonoBehaviour
     /// </summary>
     public static ePadControllerType GetLastControllerType()
     {
-        return padd.GetLastControllerType();
+        return padInput.GetLastControllerType();
     }
 
     /// <summary>
@@ -227,7 +240,7 @@ public class Padd : MonoBehaviour
     /// </summary>
     public static bool NativeKey(Key key)
     {
-        return padd.NativeKey(key);
+        return padInput.NativeKey(key);
     }
 
     /// <summary>
@@ -235,7 +248,7 @@ public class Padd : MonoBehaviour
     /// </summary>
     public static bool NativeKeyDown(Key key)
     {
-        return padd.NativeKeyDown(key);
+        return padInput.NativeKeyDown(key);
     }
 
 }
