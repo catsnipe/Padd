@@ -482,7 +482,7 @@ public partial class PadInput
             LeftStickMenu  = true;
             RightStickMenu = true;
 
-            Pad    = new ePad[(int)ePad.PadMax];
+            Pad = new ePad[(int)ePad.PadMax];
             for (int i = 0; i < Pad.Length; i++)
             {
                 ePad epad = (ePad)Enum.ToObject(typeof(ePad), i);
@@ -497,6 +497,7 @@ public partial class PadInput
     KeyConfig        keyConfig;
     PadWork[]        padWorks;
     RepeatCounter[]  repCounts;
+    ulong            reserveButton;
     bool             isEnabled;
     
 #if UNITY_STANDALONE || UNITY_EDITOR || UNITY_SWITCH
@@ -549,6 +550,10 @@ public partial class PadInput
         var preButton = pad.Button;
 
         pad.Clear();
+
+        // 予約ボタン
+        pad.Button |= reserveButton;
+        reserveButton = 0;
 
         if (isEnabled == true)
         {
@@ -685,6 +690,15 @@ public partial class PadInput
     public PadWork GetPadWork(ePad padButton)
     {
         return padWorks[(int)padButton];
+    }
+
+    /// <summary>
+    /// AB スワップがオンになっているか確認
+    /// </summary>
+    /// <returns>true..オン（↓→逆転）、false..オフ（↓→そのまま）</returns>
+    public bool CheckSwapAB()
+    {
+        return padConfig.SwapAB;
     }
 
     /// <summary>
@@ -868,6 +882,22 @@ public partial class PadInput
         return Keyboard.current[key].wasPressedThisFrame;
     }
 
+    /// <summary>
+    /// 予約キーの設定. 次の Update で判定される
+    /// </summary>
+    public void SetReserveKey(ePad button)
+    {
+        reserveButton |= getPadBit(button);
+    }
+
+    /// <summary>
+    /// 予約キーの設定. 次の Update で判定される
+    /// </summary>
+    public void SetReserveKey(ulong buttonBit)
+    {
+        reserveButton |= buttonBit;
+    }
+
 #if UNITY_IOS || UNITY_ANDROID
     /// <summary>
     /// タッチコントロール
@@ -1004,7 +1034,7 @@ public partial class PadInput
             }
         }
 
-        ulong button = pad.Button;
+        ulong button = 0;
 
         for (int i = 0; i < padWorks.Length; i++)
         {
@@ -1021,10 +1051,13 @@ public partial class PadInput
                 }
                 if (Keyboard.current[bind].isPressed == true)
                 {
-                    pad.Button |= (ulong)1 << i;
+                    button |= (ulong)1 << i;
                 }
             }
         }
+        button = swapAB(button);
+
+        pad.Button |= button;
 
 #if UNITY_STANDALONE
         if (pad.Button != button)
@@ -1209,11 +1242,11 @@ public partial class PadInput
         }
 
 #if UNITY_STANDALONE
-        //if (pad.Button != button ||
-        //    pad.Mouse.IsMoved == true )
-        //{
-        //    pad.LastControllerType = ePadControllerType.Mouse;
-        //}
+        if (pad.Button != button ||
+            pad.Mouse.IsMoved == true )
+        {
+            pad.LastControllerType = ePadControllerType.Mouse;
+        }
 #endif
     }
 #endif
@@ -1252,21 +1285,7 @@ public partial class PadInput
 #endif
 
         // 決定・キャンセルを入れ替える
-        if (padConfig.SwapAB == true)
-        {
-            ulong buttonDecide = pad.Button & B_DownButton;
-            ulong buttonCancel = pad.Button & B_RightButton;
-            
-            pad.Button &= ~(B_RightButton | B_DownButton);
-            if (buttonDecide != 0)
-            {
-                pad.Button |= B_RightButton;
-            }
-            if (buttonCancel != 0)
-            {
-                pad.Button |= B_DownButton;
-            }
-        }
+        pad.Button = swapAB(pad.Button);
         
         if ((pad.Button & B_LeftArrow) != 0)
         {
@@ -1340,6 +1359,27 @@ public partial class PadInput
         }
     }
     
+    ulong swapAB(ulong button)
+    {
+        if (padConfig.SwapAB == true)
+        {
+            ulong buttonDecide = button & B_DownButton;
+            ulong buttonCancel = button & B_RightButton;
+            
+            button &= ~(B_RightButton | B_DownButton);
+            if (buttonDecide != 0)
+            {
+                button |= B_RightButton;
+            }
+            if (buttonCancel != 0)
+            {
+                button |= B_DownButton;
+            }
+        }
+
+        return button;
+    }
+
     /// <summary>
     /// パッドボタンのキーバインド設定
     /// </summary>

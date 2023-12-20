@@ -18,7 +18,6 @@ public class Padd : MonoBehaviour
         {
             GameObject obj = new GameObject("Padd", typeof(Padd));
             paddObject = obj.GetComponent<Padd>();
-
         }
     }
 
@@ -76,6 +75,15 @@ public class Padd : MonoBehaviour
     public static PadInput.PadWork GetPadWork(ePad padButton)
     {
         return padInput.GetPadWork(padButton);
+    }
+
+    /// <summary>
+    /// AB スワップがオンになっているか確認
+    /// </summary>
+    /// <returns>true..オン（↓→逆転）、false..オフ（↓→そのまま）</returns>
+    public static bool CheckSwapAB()
+    {
+        return padInput.CheckSwapAB();
     }
 
     /// <summary>
@@ -249,6 +257,22 @@ public class Padd : MonoBehaviour
     public static bool NativeKeyDown(Key key)
     {
         return padInput.NativeKeyDown(key);
+    }
+
+    /// <summary>
+    /// 予約キーの設定. 次の Update で判定される
+    /// </summary>
+    public static void SetReserveKey(ePad button)
+    {
+        padInput.SetReserveKey(button);
+    }
+
+    /// <summary>
+    /// 予約キーの設定. 次の Update で判定される
+    /// </summary>
+    public static void SetReserveKey(ulong buttonBit)
+    {
+        padInput.SetReserveKey(buttonBit);
     }
 
 }
