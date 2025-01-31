@@ -1,4 +1,26 @@
-﻿using System;
+﻿// Copyright (c) catsnipe
+// Released under the MIT license
+
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the 
+// "Software"), to deal in the Software without restriction, including 
+// without limitation the rights to use, copy, modify, merge, publish, 
+// distribute, sublicense, and/or sell copies of the Software, and to 
+// permit persons to whom the Software is furnished to do so, subject to 
+// the following conditions:
+   
+// The above copyright notice and this permission notice shall be 
+// included in all copies or substantial portions of the Software.
+   
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE 
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -8,33 +30,49 @@ using UnityEngine.InputSystem.Controls;
 public enum ePad
 {
     None           = 0,
+    [InspectorName("Up Arrow")]
     VecUp          = 1,
     UpArrow        = 1,
+    [InspectorName("Right Arrow")]
     VecRight       = 2,
     RightArrow     = 2,
+    [InspectorName("Left Arrow")]
     VecLeft        = 3,
     LeftArrow      = 3,
+    [InspectorName("Down Arrow")]
     VecDown        = 4,
     DownArrow      = 4,
 
     UpButton       = 5,
+    [InspectorName("Up Button")]
     Triangle       = 5,
+    [InspectorName("Up Button")]
     YButton        = 5,
+    [InspectorName("Up Button")]
     XSwitch        = 5,
 
     RightButton    = 6,
+    [InspectorName("Right Button")]
     Circle         = 6,
+    [InspectorName("Right Button")]
     BButton        = 6,
+    [InspectorName("Right Button")]
     ASwitch        = 6,
 
     LeftButton     = 7,
+    [InspectorName("Left Button")]
     Square         = 7,
+    [InspectorName("Left Button")]
     XButton        = 7,
+    [InspectorName("Left Button")]
     YSwitch        = 7,
 
     DownButton     = 8,
+    [InspectorName("Down Button")]
     Cross          = 8,
+    [InspectorName("Down Button")]
     AButton        = 8,
+    [InspectorName("Down Button")]
     BSwitch        = 8,
 
     L1             = 9,
@@ -45,6 +83,7 @@ public enum ePad
     R3             = 14,
     Select         = 15,
     Start          = 16,
+    [InspectorName("Start")]
     Share          = 16,
     Touch1         = 17,
     Touch2         = 18,
@@ -425,7 +464,7 @@ public partial class PadInput
             VecD   = new Key[] { Key.DownArrow, Key.S };
             VecL   = new Key[] { Key.LeftArrow, Key.A };
             VecR   = new Key[] { Key.RightArrow, Key.D };
-            ButD   = new Key[] { Key.Z, Key.Enter, Key.Space };
+            ButD   = new Key[] { Key.Z, Key.Enter };
             ButR   = new Key[] { Key.X, Key.Escape };
             ButL   = new Key[] { Key.C };
             ButU   = new Key[] { Key.V };
@@ -468,6 +507,10 @@ public partial class PadInput
         /// </summary>
         public bool     SwapAB;
         /// <summary>
+        /// タッチ（マウス操作）オンオフ
+        /// </summary>
+        public bool     TouchEnabled;
+        /// <summary>
         /// パッド入力入れ替え用
         /// </summary>
         public ePad[]   Pad;
@@ -481,6 +524,7 @@ public partial class PadInput
             SecondDelay    = 0.04f;
             LeftStickMenu  = true;
             RightStickMenu = true;
+            TouchEnabled   = true;
 
             Pad = new ePad[(int)ePad.PadMax];
             for (int i = 0; i < Pad.Length; i++)
@@ -558,13 +602,19 @@ public partial class PadInput
         if (isEnabled == true)
         {
 #if UNITY_IOS || UNITY_ANDROID
-            getRawControl_Touch();
+            if (padConfig.TouchEnabled == true)
+            {
+                getRawControl_Touch();
+            }
 #endif
 #if UNITY_STANDALONE || UNITY_EDITOR
             getRawControl_Keyboard();
             getRawControl_Pad();
 
-            getRawControl_Mouse(preButton);
+            if (padConfig.TouchEnabled == true)
+            {
+                getRawControl_Mouse(preButton);
+            }
 #endif
 #if UNITY_SWITCH
             getRawControl_Switch();
@@ -689,6 +739,22 @@ public partial class PadInput
     /// </summary>
     public PadWork GetPadWork(ePad padButton)
     {
+        if (padButton == ePad.RightButton || padButton == ePad.DownButton)
+        {
+            if (padConfig.SwapAB == true)
+            {
+                if (padButton == ePad.RightButton)
+                {
+                    padButton = ePad.DownButton;
+                }
+                else
+                {
+                    padButton = ePad.RightButton;
+                }
+
+            }
+        }
+
         return padWorks[(int)padButton];
     }
 
@@ -1242,7 +1308,9 @@ public partial class PadInput
         }
 
 #if UNITY_STANDALONE
-        if (pad.Button != button ||
+        if (pressed[0] == true ||
+            pressed[1] == true ||
+            pressed[2] == true ||
             pad.Mouse.IsMoved == true )
         {
             pad.LastControllerType = ePadControllerType.Mouse;
@@ -1261,16 +1329,6 @@ public partial class PadInput
         pad.TouchPos[0].Copy(pad.Mouse);
 #endif
 
-#if UNITY_STANDALONE || UNITY_EDITOR
-        //if ((pad.Button & B_MouseLeft) != 0)
-        //{
-        //    pad.Button |= B_Touch1 | B_DownButton;
-        //}
-        //if ((pad.Button & B_MouseRight) != 0)
-        //{
-        //    pad.Button |= B_RightButton;
-        //}
-#else
         if ((pad.Button & B_Touch1) != 0)
         {
             pad.Button |= B_MouseLeft;
@@ -1282,7 +1340,24 @@ public partial class PadInput
         {
             pad.Button |= B_Click;
         }
+
+#if UNITY_STANDALONE || UNITY_EDITOR
+        if ((pad.Button & B_MouseLeft) != 0)
+        {
+            pad.Button |= B_Touch1;
+        }
 #endif
+// マウス直選択と決定ボタンが競合するのでやらないこと
+//#if UNITY_STANDALONE || UNITY_EDITOR
+//        if ((pad.Button & B_MouseLeft) != 0)
+//        {
+//            pad.Button |= B_Touch1 | B_DownButton;
+//        }
+//        if ((pad.Button & B_MouseRight) != 0)
+//        {
+//            pad.Button |= B_RightButton;
+//        }
+//#endif
 
         // 決定・キャンセルを入れ替える
         pad.Button = swapAB(pad.Button);
@@ -1385,27 +1460,6 @@ public partial class PadInput
     /// </summary>
     void setKeyConfig(KeyConfig config)
     {
-        List<string> buttonNames = new List<string>
-        {
-            "VecUp",
-            "VecRight",
-            "VecLeft",
-            "VecDown",
-            "UpButton",
-            "RightButton",
-            "LeftButton",
-            "DownButton",
-            "L1",
-            "R1",
-            "L2",
-            "R2",
-            "L3",
-            "R3",
-            "Select",
-            "Start",
-            "Touch1",
-        };
-
         List<ePad> padButtons = new List<ePad>
         {
             ePad.VecUp,
@@ -1425,6 +1479,10 @@ public partial class PadInput
             ePad.Select,
             ePad.Start,
             ePad.Touch1,
+            ePad.MenuUp,
+            ePad.MenuRight,
+            ePad.MenuLeft,
+            ePad.MenuDown,
         };
 
         List<Key[]> keyButtons = new List<Key[]>
@@ -1446,6 +1504,10 @@ public partial class PadInput
             config.Select,
             config.Start,
             config.Touch1,
+            config.VecU,
+            config.VecR,
+            config.VecL,
+            config.VecD,
         };
 
 #if UNITY_EDITOR
@@ -1457,11 +1519,10 @@ public partial class PadInput
         {
             var padButton  = padButtons[i];
             var keyButton  = keyButtons[i];
-            var buttonName = buttonNames[i];
 
             padWorks[(int)padButton] = new PadWork(keyButton);
 #if UNITY_EDITOR
-            debugLog.AppendLine($"  {buttonName.PadRight(10, ' ')}: {string.Join(",", keyButton)}");
+            debugLog.AppendLine($"  {padButton.ToString().PadRight(10, ' ')}: {string.Join(",", keyButton)}");
 #endif
         }
 
