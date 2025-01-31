@@ -13,7 +13,7 @@ public class Padd : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void afterSceneLoad()
     {
-        paddObject = FindObjectOfType<Padd>();
+        paddObject = FindFirstObjectByType<Padd>();
         if (paddObject == null)
         {
             GameObject obj = new GameObject("Padd", typeof(Padd));
