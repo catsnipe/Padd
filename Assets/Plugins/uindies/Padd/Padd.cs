@@ -22,8 +22,6 @@
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -41,6 +39,8 @@ public class Padd : MonoBehaviour
             GameObject obj = new GameObject("Padd", typeof(Padd));
             paddObject = obj.GetComponent<Padd>();
         }
+
+        padInput = new PadInput();
     }
 
     /// <summary>
