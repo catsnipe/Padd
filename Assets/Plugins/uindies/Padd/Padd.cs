@@ -20,8 +20,6 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-using System;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -57,6 +55,18 @@ public class Padd : MonoBehaviour
     public static void SetVirtualSize(float width, float height)
     {
         padInput?.SetVirtualSize(width, height);
+    }
+
+    /// <summary>
+    /// ディスプレイの仮想サイズを取得
+    /// </summary>
+    public static Vector2 GetVirtualSize()
+    {
+        if (padInput == null)
+        {
+            return Vector2.zero;
+        }
+        return padInput.GetVirtualSize();
     }
 
     /// <summary>
