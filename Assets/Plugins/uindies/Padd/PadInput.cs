@@ -690,6 +690,14 @@ public partial class PadInput
     }
 
     /// <summary>
+    /// ディスプレイの仮想サイズを取得
+    /// </summary>
+    public Vector2 GetVirtualSize()
+    {
+        return virtualSize;
+    }
+
+    /// <summary>
     /// パッドコンフィグ設定
     /// </summary>
     public void SetPadConfig(PadConfig config)
