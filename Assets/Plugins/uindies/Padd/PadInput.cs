@@ -284,7 +284,10 @@ public partial class PadInput
             if (Position.x != v.x || Position.y != v.y)
             {
                 IsMoved  = true;
-                Move     = v - Position;
+                if (Position.x != 0 || Position.y != 0)
+                {
+                    Move = v - Position;
+                }
                 Position = v;
             }
             else
