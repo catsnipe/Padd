@@ -1018,12 +1018,10 @@ public partial class PadInput
     }
 #endif
 
-#if UNITY_STANDALONE || UNITY_EDITOR || UNITY_SWITCH
     ulong getPadBit(ePad pad)
     {
         return (ulong)1 << (int)padConfig.Pad[(int)pad];
     }
-#endif
 
 #if UNITY_STANDALONE || UNITY_EDITOR
     /// <summary>
