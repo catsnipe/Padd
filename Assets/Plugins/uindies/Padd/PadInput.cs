@@ -1,30 +1,47 @@
 ﻿// Copyright (c) catsnipe
 // Released under the MIT license
 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the 
-// "Software"), to deal in the Software without restriction, including 
-// without limitation the rights to use, copy, modify, merge, publish, 
-// distribute, sublicense, and/or sell copies of the Software, and to 
-// permit persons to whom the Software is furnished to do so, subject to 
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
-   
-// The above copyright notice and this permission notice shall be 
+
+// The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-   
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE 
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.UI;
+
+/// <summary>
+/// マウスモード（Switch2 の Joy-Con2 マウス）中にパッドボタン入力を
+/// ブロックする範囲（誤操作防止。PadConfig.MouseModeBlockType で指定）。
+/// セーブデータに保存した場合、旧データではフィールド欠落＝0 に落ちるため、
+/// 既定にしたい値を必ず 0 に割り当てておくこと。
+/// </summary>
+[Serializable]
+public enum eMouseBlockType
+{
+    /// <summary>マウス元の Joy-Con のみブロック（プロコン等の他コントローラーは操作可能）</summary>
+    JoyCon = 0,
+    /// <summary>全コントローラーをブロック</summary>
+    All,
+}
 
 [Serializable]
 public enum ePad
@@ -157,7 +174,7 @@ public partial class PadInput
     /// メニュー矢印キーで使用
     /// </summary>
     public const ulong B_MenuArrow   = B_MenuUp | B_MenuRight | B_MenuLeft | B_MenuDown;
-    
+
     public const int   TOUCH_MAX     = 3;
 
     /// <summary>
@@ -347,15 +364,19 @@ public partial class PadInput
         {
             StartPosition = v;
         }
-        
+
         /// <summary>
         /// 開始位置から移動したかチェック
         /// </summary>
         /// <returns>true..移動した</returns>
         public bool CheckMovePositionFromStart()
         {
+            // 光学マウスはクリック中でもサブピクセル単位で位置が動くため、
+            // 完全一致ではなく数ピクセルの誤差をクリックとして許容する
+            const float tolerance = 5f;
+
             Vector2 v = Position - StartPosition;
-            return v.x != 0 || v.y != 0;
+            return v.sqrMagnitude > tolerance * tolerance;
         }
 
         float cubicOut(float t)
@@ -378,7 +399,7 @@ public partial class PadInput
         public TouchVector        Mouse   = new TouchVector();
         public List<TouchVector>  TouchPos = new List<TouchVector>();
 
-        public ePadControllerType LastControllerType;  
+        public ePadControllerType LastControllerType;
 
 #if UNITY_STANDALONE || UNITY_EDITOR
         public bool               KeyboardConnect;
@@ -389,10 +410,7 @@ public partial class PadInput
         /// <summary>.ctor</summary>
         public PadInfo()
         {
-            for (int i = 0; i < TOUCH_MAX; i++)
-            {
-                TouchPos.Add(new TouchVector());
-            }
+            Clear();
 
             LastControllerType = ePadControllerType.None;
 
@@ -405,10 +423,55 @@ public partial class PadInput
         /// <summary>clear</summary>
         public void Clear()
         {
+            ClearButton();
+            ClearAxis();
+            ClearMouse();
+        }
+
+        /// <summary>clear button</summary>
+        public void ClearButton()
+        {
             Button       = 0;
             ButtonDown   = 0;
             ButtonUp     = 0;
             ButtonDelay  = 0;
+        }
+
+        /// <summary>clear button lr</summary>
+        public void ClearButtonLR()
+        {
+            Button       &= ~(B_L1 | B_L2 | B_R1 | B_R2);
+            ButtonDown   &= ~(B_L1 | B_L2 | B_R1 | B_R2);
+            ButtonUp     &= ~(B_L1 | B_L2 | B_R1 | B_R2);
+            ButtonDelay  &= ~(B_L1 | B_L2 | B_R1 | B_R2);
+        }
+
+        /// <summary>clear button lrud</summary>
+        public void ClearButtonButtonLRUD()
+        {
+            Button       &= ~(B_UpButton | B_DownButton | B_LeftButton | B_RightButton);
+            ButtonDown   &= ~(B_UpButton | B_DownButton | B_LeftButton | B_RightButton);
+            ButtonUp     &= ~(B_UpButton | B_DownButton | B_LeftButton | B_RightButton);
+            ButtonDelay  &= ~(B_UpButton | B_DownButton | B_LeftButton | B_RightButton);
+        }
+
+        /// <summary>clear axis</summary>
+        public void ClearAxis()
+        {
+            AxisL   = new PadVector();
+            AxisR   = new PadVector();
+            Trigger = new PadVector();
+        }
+
+        /// <summary>clear mouse</summary>
+        public void ClearMouse()
+        {
+            Mouse    = new TouchVector();
+            TouchPos = new List<TouchVector>();
+            for (int i = 0; i < TOUCH_MAX; i++)
+            {
+                TouchPos.Add(new TouchVector());
+            }
         }
     }
 
@@ -467,7 +530,7 @@ public partial class PadInput
             VecD   = new Key[] { Key.DownArrow, Key.S };
             VecL   = new Key[] { Key.LeftArrow, Key.A };
             VecR   = new Key[] { Key.RightArrow, Key.D };
-            ButD   = new Key[] { Key.Z, Key.Enter };
+            ButD   = new Key[] { Key.Z };
             ButR   = new Key[] { Key.X, Key.Escape };
             ButL   = new Key[] { Key.C };
             ButU   = new Key[] { Key.V };
@@ -510,9 +573,22 @@ public partial class PadInput
         /// </summary>
         public bool     SwapAB;
         /// <summary>
+        /// キーボード操作オンオフ
+        /// </summary>
+        public bool     KeyboardEnabled;
+        /// <summary>
         /// タッチ（マウス操作）オンオフ
         /// </summary>
         public bool     TouchEnabled;
+        /// <summary>
+        /// マウスモード（Switch2 の Joy-Con2 マウス）中のパッドボタン
+        /// ブロック範囲（誤操作防止）。
+        /// JoyCon（既定） = マウス元の Joy-Con のみブロックし、プロコン等の
+        ///                  他コントローラーは操作可能のまま
+        /// All            = 全コントローラーをブロック
+        /// Switch2 以外では効果なし。
+        /// </summary>
+        public eMouseBlockType MouseModeBlockType;
         /// <summary>
         /// パッド入力入れ替え用
         /// </summary>
@@ -523,11 +599,13 @@ public partial class PadInput
         /// </summary>
         public PadConfig()
         {
-            FirstDelay     = 0.25f;
-            SecondDelay    = 0.04f;
-            LeftStickMenu  = true;
-            RightStickMenu = true;
-            TouchEnabled   = true;
+            FirstDelay      = 0.25f;
+            SecondDelay     = 0.04f;
+            LeftStickMenu   = true;
+            RightStickMenu  = true;
+            KeyboardEnabled = true;
+            TouchEnabled    = true;
+            MouseModeBlockType = eMouseBlockType.JoyCon;
 
             Pad = new ePad[(int)ePad.PadMax];
             for (int i = 0; i < Pad.Length; i++)
@@ -546,18 +624,20 @@ public partial class PadInput
     RepeatCounter[]  repCounts;
     ulong            reserveButton;
     bool             isEnabled;
-    
-#if UNITY_STANDALONE || UNITY_EDITOR || UNITY_SWITCH
+
+#if UNITY_STANDALONE || UNITY_EDITOR || UNITY_SWITCH || UNITY_SWITCH2
     static Vector2 _axisL   = new Vector2();
     static Vector2 _axisR   = new Vector2();
     static Vector2 _trigger = new Vector2();
-#endif
-#if UNITY_STANDALONE || UNITY_EDITOR
+
     static Vector2 _mouse   = new Vector2();
 #endif
 
-#if UNITY_IOS || UNITY_ANDROID || UNITY_SWITCH
-    static ePad[]  touchPads = new ePad[TOUCH_MAX] { ePad.Touch1, ePad.Touch2, ePad.Touch3 };
+#if UNITY_IOS || UNITY_ANDROID
+    static ePad[]   touchPads    = new ePad[TOUCH_MAX] { ePad.Touch1, ePad.Touch2, ePad.Touch3 };
+#endif
+#if UNITY_IOS || UNITY_ANDROID || UNITY_SWITCH || UNITY_SWITCH2
+    static ulong[]  touchPadsBit = new ulong[TOUCH_MAX] { B_Touch1, B_Touch2, B_Touch3 };
 #endif
 
     /// <summary>
@@ -577,7 +657,7 @@ public partial class PadInput
 
         setKeyConfig(keyConfig);
 
-#if UNITY_SWITCH
+#if UNITY_SWITCH || UNITY_SWITCH2
         pad.LastControllerType = ePadControllerType.Pad;
         initializeSwitch();
 #elif UNITY_STANDALONE
@@ -585,6 +665,10 @@ public partial class PadInput
 #elif UNITY_IOS || UNITY_ANDROID
         pad.LastControllerType = ePadControllerType.Touch;
 #endif
+
+        // タッチ設定を Touchscreen デバイスへ反映（後から接続された分も追従）
+        InputSystem.onDeviceChange += onDeviceChange;
+        applyTouchscreenDeviceState();
 
         isEnabled = true;
     }
@@ -596,7 +680,7 @@ public partial class PadInput
     {
         var preButton = pad.Button;
 
-        pad.Clear();
+        pad.ClearButton();
 
         // 予約ボタン
         pad.Button |= reserveButton;
@@ -611,15 +695,21 @@ public partial class PadInput
             }
 #endif
 #if UNITY_STANDALONE || UNITY_EDITOR
-            getRawControl_Keyboard();
+            if (padConfig.KeyboardEnabled == true)
+            {
+                getRawControl_Keyboard();
+            }
             getRawControl_Pad();
 
-            if (padConfig.TouchEnabled == true)
-            {
-                getRawControl_Mouse(preButton);
-            }
+            // タッチON/OFF の判定は getRawControl_Mouse 内で行う
+            // （OFF のフレームも pad.Mouse の鎮静化が必要なため）
+            getRawControl_Mouse(preButton);
 #endif
-#if UNITY_SWITCH
+
+#if (UNITY_SWITCH || UNITY_SWITCH2) && !UNITY_EDITOR
+#if UNITY_SWITCH2
+            getRawControl_SwitchMouse(preButton);
+#endif
             getRawControl_Switch();
 #endif
 
@@ -706,6 +796,117 @@ public partial class PadInput
     public void SetPadConfig(PadConfig config)
     {
         padConfig = config;
+        applyTouchscreenDeviceState();
+    }
+
+    /// <summary>
+    /// ポインタ（マウス）で UI を操作できるか。
+    /// 実機ではマウスは常に許可する。タッチOFF時のタッチ遮断は
+    /// Touchscreen デバイスの無効化（applyTouchscreenDeviceState）で行うため、
+    /// タッチOFFでも EventSystem に届くポインタイベントはマウス由来のみになる。
+    /// エディタではマウスを「タッチの代役」としてデバッグに使うため、
+    /// タッチON/OFF 設定にそのまま従う（getReserveControl と同じ思想）。
+    /// </summary>
+    public bool GetUIPointerEnabled()
+    {
+#if UNITY_EDITOR
+        return padConfig.TouchEnabled;
+#else
+        return true;
+#endif
+    }
+
+    /// <summary>
+    /// マウスカーソルが表示されている（マウス操作が成立している）か。
+    /// Switch2 では NMouse 接続中かつ Joy-Con 垂直（マウスモード）のときだけ
+    /// true になる（pad.MouseConnect と PointerDisplay の表示条件は同期している。
+    /// getRawControl_SwitchMouse / GamepadWithPointers 参照）。
+    /// スタンドアロンではマウスデバイスが存在すれば true。
+    /// </summary>
+    public bool GetMouseCursorVisible()
+    {
+        return pad.MouseConnect;
+    }
+
+    /// <summary>
+    /// ポインタイベントでフォーカス（ホバー選択）を動かしてよいか。
+    /// タッチ由来は物理的な接触なので常に許可する。
+    /// マウス由来はカーソル表示中（マウス操作中）のみ許可し、非表示カーソルの
+    /// 座標に UI が重なった際の「幻ホバー」でフォーカスが飛ぶのを防ぐ。
+    /// エディタではマウスをタッチの代役として使うため、タッチON/OFF 設定
+    /// （GetUIPointerEnabled）だけで判定する。
+    /// </summary>
+    public bool GetPointerFocusEnabled(PointerEventData eventData)
+    {
+        if (GetUIPointerEnabled() == false)
+        {
+            return false;
+        }
+#if UNITY_EDITOR
+        return true;
+#else
+        // NMouse は Mouse 派生なので、マウス由来かどうかは device is Mouse で
+        // PC マウスとまとめて判定できる（タッチは Touchscreen なので通る）
+        if (eventData is ExtendedPointerEventData ext && (ext.device is Mouse) == false)
+        {
+            return true;
+        }
+#if UNITY_STANDALONE
+        // 従来動作: 直近にマウスを操作しているときだけホバーを通す
+        return pad.LastControllerType == ePadControllerType.Mouse;
+#elif UNITY_SWITCH2
+        return GetMouseCursorVisible();
+#else
+        return true;
+#endif
+#endif
+    }
+
+    /// <summary>
+    /// タッチ設定を InputSystem の Touchscreen デバイスへ反映する。
+    /// タッチOFF時はデバイスごと無効化し、EventSystem（uGUI のクリックや
+    /// ScrollRect のドラッグ）へタッチイベントが流れないようにする。
+    /// マウス（Mouse / Switch2 の NMouse）は対象外。
+    /// nn.hid 直読みのタッチ（PadInputSwitch）は元々 TouchEnabled で
+    /// ゲートされているため、ここでは InputSystem 側だけを扱う。
+    /// </summary>
+    void applyTouchscreenDeviceState()
+    {
+        foreach (var device in InputSystem.devices)
+        {
+            if ((device is Touchscreen) == false)
+            {
+                continue;
+            }
+            if (padConfig.TouchEnabled == true)
+            {
+                if (device.enabled == false)
+                {
+                    InputSystem.EnableDevice(device);
+                }
+            }
+            else
+            {
+                if (device.enabled == true)
+                {
+                    InputSystem.DisableDevice(device);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 後から接続・再接続された Touchscreen にもタッチ設定を反映する
+    /// </summary>
+    void onDeviceChange(InputDevice device, InputDeviceChange change)
+    {
+        if (device is Touchscreen &&
+            (change == InputDeviceChange.Added ||
+             change == InputDeviceChange.Reconnected ||
+             change == InputDeviceChange.Enabled))
+        {
+            applyTouchscreenDeviceState();
+        }
     }
 
     /// <summary>
@@ -786,7 +987,7 @@ public partial class PadInput
         isEnabled = enabled;
         if (isEnabled == false)
         {
-            pad.Clear();
+            pad.ClearButton();
         }
     }
 
@@ -824,7 +1025,7 @@ public partial class PadInput
     {
         return pad.Trigger;
     }
-    
+
     /// <summary>
     /// マウスの座標（画面サイズによって変動）を取得します
     /// </summary>
@@ -833,7 +1034,7 @@ public partial class PadInput
     {
         return pad.Mouse;
     }
-    
+
     /// <summary>
     /// タッチスクリーンの座標（画面サイズによって変動）を取得します
     /// </summary>
@@ -929,7 +1130,7 @@ public partial class PadInput
     /// <returns>リピートオンされた瞬間なら true</returns>
     public bool GetKeyDelay(ulong buttonBit)
     {
-        
+
         return (pad.ButtonDelay & buttonBit) != 0;
     }
 
@@ -1056,7 +1257,7 @@ public partial class PadInput
         pad.AxisL.Update(_axisL);
         pad.AxisR.Update(_axisR);
         pad.Trigger.Update(_trigger);
-        
+
         ulong button = pad.Button;
 
         if (gamepad.buttonNorth.isPressed == true)      pad.Button |= getPadBit(ePad.UpButton);
@@ -1075,7 +1276,7 @@ public partial class PadInput
         if (gamepad.rightTrigger.isPressed == true)     pad.Button |= getPadBit(ePad.R2);
         if (gamepad.leftStickButton.isPressed == true)  pad.Button |= getPadBit(ePad.L3);
         if (gamepad.rightStickButton.isPressed == true) pad.Button |= getPadBit(ePad.R3);
-        
+
         if (pad.Button != button ||
             pad.AxisL.IsMoved == true ||
             pad.AxisR.IsMoved == true ||
@@ -1132,14 +1333,15 @@ public partial class PadInput
         }
         button = swapAB(button);
 
-        pad.Button |= button;
-
-#if UNITY_STANDALONE
+#if UNITY_STANDALONE || UNITY_EDITOR
         if (pad.Button != button)
         {
             pad.LastControllerType = ePadControllerType.Keyboard;
         }
 #endif
+
+        pad.Button |= button;
+
     }
 #endif
 
@@ -1227,6 +1429,14 @@ public partial class PadInput
     /// </summary>
     void getRawControl_Mouse(ulong preButton)
     {
+        // タッチ（ポインタ）設定OFFの間は読まない。
+        // 読まないフレームも凍結防止の鎮静化だけは行う
+        if (padConfig.TouchEnabled == false)
+        {
+            settleMouseVector();
+            return;
+        }
+
         if (Mouse.current == null)
         {
             if (pad.MouseConnect == true)
@@ -1234,6 +1444,7 @@ public partial class PadInput
                 Debug.LogWarning("[mouse] Disconnect.");
                 pad.MouseConnect = false;
             }
+            settleMouseVector();
             return;
         }
         else
@@ -1247,6 +1458,36 @@ public partial class PadInput
 
         _mouse = Mouse.current.position.ReadValue();
 
+        _setMouseRawPosition();
+
+        bool[] pressed =
+        {
+            Mouse.current.leftButton.isPressed,
+            Mouse.current.middleButton.isPressed,
+            Mouse.current.rightButton.isPressed,
+        };
+
+        _pressMouseButton(preButton, pressed, Mouse.current.scroll.ReadValue().y);
+    }
+#endif
+
+    /// <summary>
+    /// マウスを読まないフレームの pad.Mouse の鎮静化。
+    /// 更新を止めると IsMoved / TouchMove が「動いた」状態のまま凍結し、
+    /// ポインタ追従のマウス優先分岐から抜けられなくなる（bugID:0000361 と同型）。
+    /// 座標は保持したまま「動いた」状態だけを落とす。
+    /// マウスを読まずに return する経路では必ずこれを呼ぶこと
+    /// （getRawControl_Mouse / getRawControl_SwitchMouse）。
+    /// </summary>
+    void settleMouseVector()
+    {
+        // ホイールが残っていると Update 内の分岐で IsMoved=true が再生成される
+        pad.Mouse.MouseWheel = 0;
+        pad.Mouse.Update(pad.Mouse.Position, false);
+    }
+
+    void _setMouseRawPosition()
+    {
         _mouse = getVirtualPosition(_mouse);
 
         pad.Mouse.MouseRawPosition = _mouse;
@@ -1270,15 +1511,10 @@ public partial class PadInput
                 return;
             }
         }
+    }
 
-        ulong button = pad.Button;
-
-        bool[] pressed =
-        {
-            Mouse.current.leftButton.isPressed,
-            Mouse.current.middleButton.isPressed,
-            Mouse.current.rightButton.isPressed,
-        };
+    void _pressMouseButton(ulong preButton, bool[] pressed, float wheel)
+    {
         ulong[] mouses =
         {
             B_MouseLeft, B_MouseMiddle, B_MouseRight,
@@ -1296,8 +1532,6 @@ public partial class PadInput
             }
         }
 
-        float   wheel = Mouse.current.scroll.ReadValue().y;
-
         if (wheel != pad.Mouse.MouseWheel)
         {
             pad.Button |= B_AnyKey;
@@ -1308,7 +1542,7 @@ public partial class PadInput
 
         // クリックは、押して、移動なしに離したら発生する
         if (
-            (preButton & B_MouseLeft)  != 0 && 
+            (preButton & B_MouseLeft)  != 0 &&
             (pad.Button & B_MouseLeft) == 0 &&
             pad.Mouse.CheckMovePositionFromStart() == false
         )
@@ -1316,25 +1550,36 @@ public partial class PadInput
             pad.Button |= B_Click;
         }
 
-#if UNITY_STANDALONE
         if (pressed[0] == true ||
             pressed[1] == true ||
             pressed[2] == true ||
             pad.Mouse.IsMoved == true )
         {
+            // Switch2 のマウスモード（NMouse 接続中）もマウス操作として扱う
             pad.LastControllerType = ePadControllerType.Mouse;
         }
-#endif
     }
-#endif
 
     /// <summary>
     /// MENU_XXX などの予約コントロールの設定
     /// </summary>
     void getReserveControl(ulong preButton)
     {
-        // UNITY_EDITOR ではマウスをタッチの代わりに見立てる
-#if UNITY_STANDALONE || UNITY_EDITOR
+        // マウスをタッチの代役として TouchPos[0] へ転写する
+        // （UNITY_EDITOR ではマウスをタッチの代わりに見立てる）。
+        // Switch2 は実タッチとマウス（NMouse）が併存するため、
+        // 実タッチ中とマウスモード外は転写しない。無条件に転写すると
+        // 実タッチの座標・IsMoved が毎フレーム潰され、タッチで指カーソルが
+        // 動かなくなる。この時点の B_Touch1 は実タッチのみ
+        // （マウス→タッチの合成はこの後で行われる）
+#if UNITY_EDITOR
+        pad.TouchPos[0].Copy(pad.Mouse);
+#elif UNITY_SWITCH2
+        if ((pad.Button & B_Touch1) == 0 && pad.MouseConnect == true)
+        {
+            pad.TouchPos[0].Copy(pad.Mouse);
+        }
+#elif UNITY_STANDALONE
         pad.TouchPos[0].Copy(pad.Mouse);
 #endif
 
@@ -1350,10 +1595,14 @@ public partial class PadInput
             pad.Button |= B_Click;
         }
 
-#if UNITY_STANDALONE || UNITY_EDITOR
+#if UNITY_STANDALONE || UNITY_SWITCH2 || UNITY_EDITOR
         if ((pad.Button & B_MouseLeft) != 0)
         {
             pad.Button |= B_Touch1;
+        }
+        if ((pad.Button & B_MouseRight) != 0)
+        {
+            pad.Button |= B_MenuCancel;
         }
 #endif
 // マウス直選択と決定ボタンが競合するのでやらないこと
@@ -1370,7 +1619,7 @@ public partial class PadInput
 
         // 決定・キャンセルを入れ替える
         pad.Button = swapAB(pad.Button);
-        
+
         if ((pad.Button & B_LeftArrow) != 0)
         {
             pad.Button |= B_MenuLeft;
@@ -1388,7 +1637,11 @@ public partial class PadInput
             pad.Button |= B_MenuUp;
         }
 
+#if UNITY_SWITCH2
+        if (isPadBlockedByMouse() == false && padConfig.LeftStickMenu == true)
+#else
         if (padConfig.LeftStickMenu == true)
+#endif
         {
             if (pad.AxisL.Position.x <= -0.6f)
             {
@@ -1408,7 +1661,11 @@ public partial class PadInput
             }
         }
 
+#if UNITY_SWITCH2
+        if (isPadBlockedByMouse() == false && padConfig.RightStickMenu == true)
+#else
         if (padConfig.RightStickMenu == true)
+#endif
         {
             if (pad.AxisR.Position.x <= -0.6f)
             {
@@ -1442,14 +1699,14 @@ public partial class PadInput
             pad.Button |= B_AnyKey;
         }
     }
-    
+
     ulong swapAB(ulong button)
     {
         if (padConfig.SwapAB == true)
         {
             ulong buttonDecide = button & B_DownButton;
             ulong buttonCancel = button & B_RightButton;
-            
+
             button &= ~(B_RightButton | B_DownButton);
             if (buttonDecide != 0)
             {

@@ -88,6 +88,48 @@ public class Padd : MonoBehaviour
         }
         return padInput.GetPadConfig();
     }
+
+    /// <summary>
+    /// ポインタ（マウス）で UI を操作できるか。
+    /// 実機ではマウスは常に許可（タッチOFF時のタッチ遮断は Touchscreen デバイス
+    /// 無効化で行われる）。エディタではデバッグ用にタッチON/OFF 設定へ従う。
+    /// 詳細は doc/switch2-mouse-ui-click-fix.md を参照。
+    /// </summary>
+    public static bool GetUIPointerEnabled()
+    {
+        if (padInput == null)
+        {
+            return false;
+        }
+        return padInput.GetUIPointerEnabled();
+    }
+
+    /// <summary>
+    /// マウスカーソルが表示されている（マウス操作が成立している）か。
+    /// Switch2 ではマウスモード中のみ true。
+    /// </summary>
+    public static bool GetMouseCursorVisible()
+    {
+        if (padInput == null)
+        {
+            return false;
+        }
+        return padInput.GetMouseCursorVisible();
+    }
+
+    /// <summary>
+    /// ポインタイベントでフォーカス（ホバー選択）を動かしてよいか。
+    /// タッチ由来は常に許可、マウス由来はカーソル表示中のみ許可。
+    /// 詳細は PadInput.GetPointerFocusEnabled を参照。
+    /// </summary>
+    public static bool GetPointerFocusEnabled(UnityEngine.EventSystems.PointerEventData eventData)
+    {
+        if (padInput == null)
+        {
+            return false;
+        }
+        return padInput.GetPointerFocusEnabled(eventData);
+    }
     
     /// <summary>
     /// set key config
